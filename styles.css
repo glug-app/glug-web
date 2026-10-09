@@ -363,3 +363,21 @@ img { display: block; }
 
   .page { padding-top: 3rem; }
 }
+
+/* ── Profile link (/u/<id>) ──────────────────────────────────────── */
+
+.profile-link {
+  min-height: 100vh;
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.profile-link .store-cta { background: var(--bone); color: var(--vine-olive); }
+
+.profile-link .store-cta:hover { background: var(--sand); }
+
+.profile-link .store-cta[hidden] { display: none; }
+
+.profile-link .beta-note { font-size: 0.875rem; color: var(--dust); }

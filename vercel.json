@@ -5,5 +5,8 @@
     { "source": "/privacy-policy", "destination": "/privacy", "permanent": true },
     { "source": "/home", "destination": "/", "permanent": true },
     { "source": "/cart", "destination": "/", "permanent": true }
+  ],
+  "rewrites": [
+    { "source": "/u/:id", "destination": "/u" }
   ]
 }

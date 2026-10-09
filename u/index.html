@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>glug</title>
+  <meta name="description" content="Glug — knowing wine is just about knowing what you like. Scan a wine list, log what you drink, and get recommendations that match your taste.">
+  <meta name="robots" content="noindex">
+  <meta name="theme-color" content="#464B36">
+  <link rel="icon" href="/assets/favicon-32.png" type="image/png">
+  <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+  <link rel="preload" href="/assets/fonts/newsreader-latin-300-normal.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="/assets/fonts/hanken-grotesk-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <main class="hero profile-link">
+    <div class="hero-inner">
+      <img class="logo" src="/assets/glug-logo-white.png" alt="glug — a hand holding a glass of wine" width="956" height="711">
+      <h1 class="tagline">Someone shared their Glug profile with you.</h1>
+      <a class="store-cta" id="open-in-glug" hidden>Open in Glug</a>
+      <p class="beta-note">Glug is in private beta. If you do not have the app yet, write to <a href="mailto:hello@glug-wine.com">hello@glug-wine.com</a>.</p>
+    </div>
+  </main>
+
+  <script>
+    // The deep link is only filled in when the path ends in a UUID; otherwise the button stays hidden.
+    // No automatic redirect to glug:// — Safari shows an error dialog when the app is not installed.
+    const match = location.pathname.match(/^\/u\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\/?$/i);
+    if (match) {
+      const button = document.getElementById('open-in-glug');
+      button.href = 'glug://u/' + match[1].toLowerCase();
+      button.hidden = false;
+    }
+  </script>
+</body>
+</html>
