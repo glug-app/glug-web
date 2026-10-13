@@ -25,7 +25,7 @@
 
   <main class="page">
     <h1>Privacy Policy</h1>
-    <p class="updated">Last updated: October 10, 2026</p>
+    <p class="updated">Last updated: October 13, 2026</p>
 
     <p>Glug is built on a simple idea: knowing wine is just about knowing what you like. The more you log, the more we learn about you and the better we get at recommending the right bottles. This policy outlines what we collect.</p>
 
@@ -41,6 +41,7 @@
       <li><strong>Email address and password</strong> — only if you choose email sign-in instead of your phone number.</li>
       <li><strong>Wine ratings and taste preferences</strong> — the core of your Glug profile, used to generate personalised recommendations. This includes your logs: ratings, tasting notes, food pairings, and prices you record.</li>
       <li><strong>Profile and social activity</strong> — your display name, whether your profile is public, the people you follow and who follow you, follow requests, likes, comments, blocks, the reports you send, the milestones Glug records from your shared logs, whether Glug suggests your profile to others, and the notifications Glug creates for you.</li>
+      <li><strong>Profile photo</strong> — optional. If you choose one, it is shown to other Glug users (see What other Glug users can see below).</li>
       <li><strong>Photos of wine lists and bottle labels</strong> — the camera is used when you scan. Photos are uploaded to a private storage area that only your account can access (see Data retention below).</li>
       <li><strong>App usage data</strong> — how you interact with the app, such as scan activity, stored in our own database and used to improve the experience. We do not use third-party analytics or advertising SDKs.</li>
     </ul>
@@ -62,9 +63,10 @@
       <li>New profiles are public. Anyone signed in to Glug can find you by your display name and follow you, and Glug may suggest your profile to other users. Profiles created before these features arrived are not made public automatically. You can switch between public and private at any time in <strong>Profile &rarr; Settings &rarr; Privacy</strong>.</li>
       <li>A public profile shows other Glug users your display name, the month you joined, your taste sentence, how many logs you share, your followers and the people you follow, your taste match with them, and your shared logs.</li>
       <li>A private profile does not appear in search. Someone with your profile link sees your display name and the month you joined and can ask to follow you. Only the people you accept see the rest.</li>
-      <li>A shared log shows the wine, your rating, the tasting words you chose and the date. Your notes, prices, occasion, food pairings, where you drank and any photos are never shared. Each log has its own sharing switch; a log with sharing off is seen only by you.</li>
+      <li>A shared log shows the wine, your rating, the tasting words you chose and the date. Your notes, prices, occasion, food pairings, where you drank and any photos of the wine are never shared. Each log has its own sharing switch; a log with sharing off is seen only by you.</li>
       <li>Glug may add a milestone to one of your shared logs, such as your first wine from a new region. Anyone who can see that log can see the milestone. Milestones come only from shared logs.</li>
       <li>Likes and comments carry your name. Anyone who can see a log can see who liked it and who commented on it. Comments cannot be edited. You can delete your own comments, and any comment on your own logs.</li>
+      <li>If you add a profile photo, it is shown wherever your name is shown, to anyone signed in to Glug, including when your profile is private.</li>
       <li>Your display name is not private. Even with a private profile, other Glug users can see it through your profile link, on your comments and likes, on follow requests you send, in the follower lists of the people you follow, and in the blocked list of anyone who blocks you.</li>
       <li>Taste match: Glug compares your taste profile with another person's on its servers. Each of you sees a match score and one line about a single taste, such as &ldquo;Body &middot; you Full, they Medium&rdquo;. Your underlying taste numbers are never shown.</li>
       <li>Glug notifies you in the app when someone follows you, asks to follow you, accepts your request, likes your log or comments on it.</li>
@@ -82,7 +84,7 @@
     <p>Glug uses the following third-party services, each with their own privacy policy:</p>
     <ul>
       <li><strong>Anthropic</strong> — AI processing of the wine list and bottle label photos you scan</li>
-      <li><strong>Supabase</strong> — secure database, sign-in, and private photo storage</li>
+      <li><strong>Supabase</strong> — secure database, sign-in, and photo storage (private for the photos you scan; profile photos are served from a link)</li>
       <li><strong>Twilio</strong> — delivers the SMS verification codes used to sign in</li>
       <li><strong>Apple</strong> — iOS app distribution (App Store and TestFlight) and device-level permissions</li>
       <li><strong>Google</strong> — Android app distribution (Google Play) and device-level permissions</li>
@@ -91,7 +93,7 @@
     <p>We do not sell your data to any third party and do not share it with advertisers.</p>
 
     <h2>Data retention</h2>
-    <p>We retain your account data for as long as your account is active. Photos you scan are stored in private storage and are not automatically deleted while your account is active; deleting a menu scan from your scan history also deletes its photos, and all of your photos are deleted when you delete your account. Your taste profile and ratings are stored as long as your account exists. Reports you send are deleted when you delete your account. A report someone else sends about you or your content is kept as a record of moderation after that content or your account is deleted. It keeps no copy of what was reported, only the reason and any note the reporter wrote.</p>
+    <p>We retain your account data for as long as your account is active. Photos you scan are stored in private storage and are not automatically deleted while your account is active; deleting a menu scan from your scan history also deletes its photos, and all of your scanned photos are deleted when you delete your account. Your profile photo is not private: it is stored with Supabase and served from a link that anyone who has it can open. It is deleted when you remove or replace it, or when you delete your account. Your taste profile and ratings are stored as long as your account exists. Reports you send are deleted when you delete your account. A report someone else sends about you or your content is kept as a record of moderation after that content or your account is deleted. It keeps no copy of what was reported, only the reason and any note the reporter wrote.</p>
 
     <h2>Your rights</h2>
     <p>You can, at any time:</p>
@@ -101,7 +103,7 @@
       <li>Request deletion of your account and all associated data</li>
       <li>Withdraw consent for data collection</li>
     </ul>
-    <p>To delete your account, go to <strong>Profile &rarr; Settings &rarr; Delete account</strong> within the app. This immediately and permanently removes your account and its personal data, including your profile, logs, preferences, scan history, scanned photos, follows and follow requests, likes, comments (including those on other people's logs), blocks, notifications and the reports you sent. You can also <a href="mailto:privacy@glug-wine.com">email us</a> to request deletion directly.</p>
+    <p>To delete your account, go to <strong>Profile &rarr; Settings &rarr; Delete account</strong> within the app. This immediately and permanently removes your account and its personal data, including your profile, logs, preferences, scan history, scanned photos, profile photo, follows and follow requests, likes, comments (including those on other people's logs), blocks, notifications and the reports you sent. You can also <a href="mailto:privacy@glug-wine.com">email us</a> to request deletion directly.</p>
 
     <h2>Age</h2>
     <p>Glug is an alcohol-related app intended for users aged 21 and over in the United States, or the legal drinking age in your country. We do not knowingly collect data from anyone below the legal drinking age. If you believe an underage user has created an account, contact us at <a href="mailto:privacy@glug-wine.com">privacy@glug-wine.com</a> and we will delete it promptly.</p>
