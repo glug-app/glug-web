@@ -4,7 +4,8 @@
   "redirects": [
     { "source": "/privacy-policy", "destination": "/privacy", "permanent": true },
     { "source": "/home", "destination": "/", "permanent": true },
-    { "source": "/cart", "destination": "/", "permanent": true }
+    { "source": "/cart", "destination": "/", "permanent": true },
+    { "source": "/waitlist", "has": [{ "type": "query", "key": "error" }], "destination": "/waitlist/error", "permanent": false }
   ],
   "rewrites": [
     { "source": "/u/:id", "destination": "/u" }

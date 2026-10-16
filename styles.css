@@ -245,9 +245,13 @@ img { display: block; }
 
 .footer-links {
   display: flex;
-  gap: 1.5rem;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.5rem 1.5rem;
   font-size: 0.875rem;
 }
+
+.footer-links a { white-space: nowrap; }
 
 .footer-meta {
   font-size: 0.75rem;
@@ -364,6 +368,12 @@ img { display: block; }
   .page { padding-top: 3rem; }
 }
 
+/* ── Light button on the olive hero (home, /u/<id>) ─────────────── */
+
+.hero .store-cta { background: var(--bone); color: var(--vine-olive); }
+
+.hero .store-cta:hover { background: var(--sand); }
+
 /* ── Profile link (/u/<id>) ──────────────────────────────────────── */
 
 .profile-link {
@@ -374,10 +384,42 @@ img { display: block; }
   justify-content: center;
 }
 
-.profile-link .store-cta { background: var(--bone); color: var(--vine-olive); }
-
-.profile-link .store-cta:hover { background: var(--sand); }
-
 .profile-link .store-cta[hidden] { display: none; }
 
 .profile-link .beta-note { font-size: 0.875rem; color: var(--dust); }
+
+/* ── Waitlist (/waitlist) ────────────────────────────────────────── */
+
+.waitlist-form { display: flex; flex-direction: column; gap: 1.25rem; }
+
+.waitlist-form .field { display: flex; flex-direction: column; gap: 0.375rem; margin: 0; padding: 0; border: 0; font-weight: 500; }
+
+.waitlist-form legend { padding: 0; margin-bottom: 0.375rem; }
+
+.waitlist-form .field small { font-weight: 400; color: var(--sage); }
+
+.waitlist-form input[type='text'],
+.waitlist-form input[type='tel'],
+.waitlist-form input[type='email'] {
+  font: inherit;
+  font-weight: 400;
+  padding: 0.75rem 0.875rem;
+  border: 1px solid var(--dust);
+  border-radius: 10px;
+  background: #fff;
+  color: var(--ink);
+}
+
+.waitlist-form .choice { display: flex; align-items: center; gap: 0.5rem; font-weight: 400; }
+
+.waitlist-form .choice input { accent-color: var(--vine-olive); width: 1.125rem; height: 1.125rem; margin: 0; }
+
+.waitlist-form .hp { position: absolute; left: -10000px; width: 1px; height: 1px; overflow: hidden; }
+
+.waitlist-form .store-cta { align-self: flex-start; border: 0; font-family: inherit; cursor: pointer; }
+
+.page .form-note { font-size: 0.875rem; color: var(--sage); }
+
+.page .form-error { color: #8A2D1F; font-weight: 500; }
+
+.page .store-cta { color: var(--bone); text-decoration: none; }

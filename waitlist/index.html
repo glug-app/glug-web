@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Join the waitlist — glug</title>
+  <meta name="description" content="Glug is in private beta. Join the waitlist and we will email you when it is your turn.">
+  <meta name="theme-color" content="#FBF8F0">
+  <link rel="icon" href="/assets/favicon-32.png" type="image/png">
+  <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+  <link rel="preload" href="/assets/fonts/newsreader-latin-300-normal.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="/assets/fonts/hanken-grotesk-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <header class="site-header">
+    <a class="logo-link" href="/" aria-label="Glug home">
+      <img class="logo" src="/assets/glug-logo-green.png" alt="glug" width="956" height="711">
+    </a>
+    <nav class="site-nav" aria-label="Main">
+      <a href="/support">Support</a>
+      <a href="/privacy">Privacy Policy</a>
+    </nav>
+  </header>
+
+  <main class="page">
+    <h1>Join the waitlist</h1>
+    <!-- PLACEHOLDER COPY (Sadhana to rewrite) -->
+    <p class="lede">Glug is in private beta. Tell us a little about yourself and we will email you when it is your turn.</p>
+
+    <!-- Posts to the waitlist-signup edge function.
+         The function should redirect to /waitlist/thanks on success and /waitlist?error=1 on failure. -->
+    <form class="waitlist-form" method="post" action="https://txjfbiriyceabushptlp.supabase.co/functions/v1/waitlist-signup">
+      <label class="field">
+        <span>Name</span>
+        <input type="text" name="name" autocomplete="name" required>
+      </label>
+
+      <label class="field">
+        <span>Mobile number</span>
+        <input type="tel" name="phone" autocomplete="tel" required>
+      </label>
+
+      <label class="field">
+        <span>Email</span>
+        <input type="email" name="email" autocomplete="email" required>
+      </label>
+
+      <fieldset class="field">
+        <legend>Phone</legend>
+        <label class="choice"><input type="radio" name="platform" value="ios" required> iPhone</label>
+        <label class="choice"><input type="radio" name="platform" value="android"> Android</label>
+      </fieldset>
+
+      <label class="field">
+        <span>Google account email <small>(only needed for Android)</small></span>
+        <input type="email" name="google_email" autocomplete="off">
+      </label>
+
+      <label class="field">
+        <span>Neighborhood</span>
+        <input type="text" name="neighborhood" required>
+      </label>
+
+      <fieldset class="field">
+        <legend>How often do you order wine at restaurants?</legend>
+        <label class="choice"><input type="radio" name="order_frequency" value="weekly" required> Weekly or more</label>
+        <label class="choice"><input type="radio" name="order_frequency" value="few_per_month"> A few times a month</label>
+        <label class="choice"><input type="radio" name="order_frequency" value="monthly"> About monthly</label>
+        <label class="choice"><input type="radio" name="order_frequency" value="rarely"> Rarely</label>
+      </fieldset>
+
+      <label class="field">
+        <span>Who told you about Glug? <small>(optional)</small></span>
+        <input type="text" name="referral">
+      </label>
+
+      <!-- Honeypot: hidden from people, bots fill it in. The edge function should drop any submission where it is non-empty. -->
+      <div class="hp" aria-hidden="true">
+        <label>Leave this empty <input type="text" name="website" tabindex="-1" autocomplete="off"></label>
+      </div>
+
+      <button class="store-cta" type="submit">Join the waitlist</button>
+      <!-- PLACEHOLDER COPY (Sadhana to rewrite) -->
+      <p class="form-note">We use this only to invite you to Glug and contact you about it. See our <a href="/privacy#waitlist">Privacy Policy</a>.</p>
+    </form>
+  </main>
+
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <img class="logo" src="/assets/glug-logo-white.png" alt="glug" width="956" height="711">
+      <nav class="footer-links" aria-label="Footer">
+        <a href="/support">Support</a>
+        <a href="/privacy">Privacy Policy</a>
+        <a href="/terms">Terms of Use</a>
+      </nav>
+      <p class="footer-meta">&copy; 2026 Glug</p>
+    </div>
+  </footer>
+</body>
+</html>
