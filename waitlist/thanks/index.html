@@ -24,11 +24,37 @@
     </nav>
   </header>
 
-  <main class="page">
-    <h1>You're on the list</h1>
+  <main class="page waitlist-thanks">
+    <img class="app-icon" src="/assets/app-icon.png" alt="" width="384" height="384">
     <!-- PLACEHOLDER COPY (Sadhana to rewrite) -->
-    <p class="lede">Thanks for joining the Glug waitlist. We are letting people in in waves, and we will email you when it is your turn.</p>
-    <p><a href="/">Back to Glug</a></p>
+    <h1>You're on the list</h1>
+    <p class="lede">We'll let you know when it's your turn. Then download Glug and sign in with the phone number you gave us.</p>
+
+    <!--
+      Store badges: official artwork, unmodified (assets/badges/).
+      Apple: tools.applemediaservices.com, linked from
+        developer.apple.com/app-store/marketing/guidelines
+      Google: play.google.com/intl/en_us/badges (its PNG includes the
+        required clear space, so its height is scaled to make the visible
+        badge match Apple's; see .store-badges in styles.css).
+      TO GO LIVE: wrap each <img> in its store link, e.g.
+        <a href="https://apps.apple.com/app/id6791446035">...</a>
+        <a href="https://play.google.com/store/apps/details?id=com.glug.app">...</a>
+      then remove role="img", the aria-label and the "Coming soon" caption
+      from each badge, and give each <img> its alt text back
+      ("Download on the App Store" / "Get it on Google Play").
+    -->
+    <div class="store-badges">
+      <div class="store-badge store-badge-apple" role="img" aria-label="Download on the App Store, coming soon">
+        <img src="/assets/badges/app-store-badge-black.svg" alt="" width="120" height="40">
+        <p class="store-badge-caption">Coming soon</p>
+      </div>
+      <div class="store-badge store-badge-google" role="img" aria-label="Get it on Google Play, coming soon">
+        <img src="/assets/badges/google-play-badge.png" alt="" width="646" height="250">
+        <p class="store-badge-caption">Coming soon</p>
+      </div>
+    </div>
+
   </main>
 
   <footer class="site-footer">
@@ -40,7 +66,7 @@
         <a href="/terms">Terms of Use</a>
         <a href="/delete-account">Delete account</a>
       </nav>
-      <p class="footer-meta">&copy; 2026 Glug</p>
+      <p class="footer-meta">&copy; 2026 Glug Wine, Inc.</p>
     </div>
   </footer>
 </body>

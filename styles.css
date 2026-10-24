@@ -423,3 +423,54 @@ img { display: block; }
 .page .form-error { color: #8A2D1F; font-weight: 500; }
 
 .page .store-cta { color: var(--bone); text-decoration: none; }
+
+/* ── Waitlist thanks (/waitlist/thanks) ──────────────────────────── */
+
+.waitlist-thanks { text-align: center; }
+
+.waitlist-thanks .app-icon {
+  width: 112px;
+  height: 112px;
+  margin: 0 auto 1.75rem;
+  border-radius: 22.5%;
+}
+
+.waitlist-thanks .lede { max-width: 30rem; margin: 0 auto 2rem; }
+
+/* Official badges, unmodified. --badge-h is the VISIBLE badge height
+   (Apple's minimum on screen is 40px). Apple's SVG is the badge alone,
+   so it gets its clear space (a quarter of its height) as margin.
+   Google's PNG already carries its clear space: the visible badge is
+   168 of its 250px, so the image is scaled to make that 168 equal
+   --badge-h and the two badges match. */
+.store-badges {
+  --badge-h: 44px;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: flex-start;
+  margin: 0 0 1.5rem;
+}
+
+.store-badge { display: flex; flex-direction: column; align-items: center; }
+
+.store-badge-apple img {
+  height: var(--badge-h);
+  width: auto;
+  margin: calc(var(--badge-h) / 4);
+}
+
+.store-badge-google img {
+  height: calc(var(--badge-h) * 250 / 168);
+  width: auto;
+}
+
+.page .store-badge-caption {
+  margin: 0;
+  font-size: 0.8125rem;
+  color: var(--sage);
+}
+
+@media (min-width: 640px) {
+  .store-badges { --badge-h: 48px; }
+}
