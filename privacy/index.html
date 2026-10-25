@@ -25,7 +25,7 @@
 
   <main class="page">
     <h1>Privacy Policy</h1>
-    <p class="updated">Last updated: October 23, 2026</p>
+    <p class="updated">Last updated: October 24, 2026</p>
 
     <p>Glug is built on a simple idea: knowing wine is just about knowing what you like. The more you log, the more we learn about you and the better we get at recommending the right bottles. This policy outlines what we collect.</p>
 
@@ -43,10 +43,12 @@
       <li><strong>Profile and social activity</strong> — your display name, whether your profile is public, the people you follow and who follow you, follow requests, likes, comments, blocks, the reports you send, the milestones Glug records from your shared logs, whether Glug suggests your profile to others, and the notifications Glug creates for you.</li>
       <li><strong>Profile photo</strong> — optional. If you choose one, it is shown to other Glug users (see What other Glug users can see below).</li>
       <li><strong>Push notifications</strong> (optional). If you turn them on, we store a push token for your phone, issued by Firebase Cloud Messaging (a Google service), together with your user id, whether the phone is an iPhone or an Android phone, whether notifications are switched on for that phone, and when the phone last checked in with Glug. See <a href="#notifications">Push notifications</a> below.</li>
+      <li><strong>Restaurants on your scans</strong> (optional). If you add the restaurant you are at to a wine list scan, we store it with that scan: Google's place id for the restaurant, its name, neighborhood, address and map coordinates, Google's categories for the place, and when you added it. If you log a wine from that scan, the restaurant's place id and name are saved with that log too. See <a href="#restaurants">Restaurants and your city</a> below.</li>
+      <li><strong>Your city</strong> (optional). You can set your city in Settings. We store Google's place id for it, its name and its map coordinates. Until you set one, Glug uses New York.</li>
       <li><strong>Photos of wine lists and bottle labels</strong> — the camera is used when you scan. Photos are uploaded to a private storage area that only your account can access (see Data retention below).</li>
       <li><strong>App usage data</strong> — how you interact with the app, such as scan activity, stored in our own database and used to improve the experience. We do not use third-party analytics or advertising SDKs.</li>
     </ul>
-    <p>We do not collect your precise location, contacts, or payment information.</p>
+    <p>We do not collect your device's location, contacts, or payment information. A restaurant you add to a scan does record where you were when you scanned, and adding one is always your choice.</p>
 
     <h2 id="waitlist">Waitlist</h2>
     <!-- PLACEHOLDER COPY (Sadhana to rewrite) -->
@@ -59,6 +61,7 @@
       <li>Improve the app's accuracy and performance over time</li>
       <li>Send you important account-related messages (not marketing, unless you opt in)</li>
       <li>Show your profile, shared logs, likes and comments to other Glug users, as described below</li>
+      <li>Show the restaurant on your scans and logs, and center restaurant search on your city</li>
       <li>Send notifications to your phone, if you turn them on, when someone likes or comments on your log, follows you, asks to follow you or accepts your request</li>
       <li>Review reports and keep Glug respectful</li>
     </ul>
@@ -69,7 +72,7 @@
       <li>New profiles are public. Anyone signed in to Glug can find you by your display name and follow you, and Glug may suggest your profile to other users. Profiles created before these features arrived are not made public automatically. You can switch between public and private at any time in <strong>Profile &rarr; Settings &rarr; Privacy</strong>.</li>
       <li>A public profile shows other Glug users your display name, the month you joined, your taste sentence, how many logs you share, your followers and the people you follow, your taste match with them, and your shared logs.</li>
       <li>A private profile does not appear in search. Someone with your profile link sees your display name and the month you joined and can ask to follow you. Only the people you accept see the rest.</li>
-      <li>A shared log shows the wine, your rating, the tasting words you chose and the date. Your notes, prices, occasion, food pairings, where you drank and any photos of the wine are never shared. Each log has its own sharing switch; a log with sharing off is seen only by you.</li>
+      <li>A shared log shows the wine, your rating, the tasting words you chose and the date. Your notes, prices, occasion, food pairings, where you drank, the restaurant saved with the log and any photos of the wine are never shared. Each log has its own sharing switch; a log with sharing off is seen only by you.</li>
       <li>Glug may add a milestone to one of your shared logs, such as your first wine from a new region. Anyone who can see that log can see the milestone. Milestones come only from shared logs.</li>
       <li>Likes and comments carry your name. Anyone who can see a log can see who liked it and who commented on it. Comments cannot be edited. You can delete your own comments, and any comment on your own logs.</li>
       <li>If you add a profile photo, it is shown wherever your name is shown, to anyone signed in to Glug, including when your profile is private.</li>
@@ -84,6 +87,12 @@
     <p>A notification shows the person's name and the wine on your log, as its producer and name, for example &ldquo;Sadhana liked your Frog's Leap Cabernet Sauvignon&rdquo;. It never shows comment text, your notes, prices or anything else from your log.</p>
     <p>To deliver them, Glug stores a push token for your phone, issued by Firebase Cloud Messaging, a Google service, together with your user id, whether the phone is an iPhone or an Android phone, whether notifications are switched on for that phone, and when the phone last checked in with Glug. Google (Firebase Cloud Messaging) and, for iPhones, Apple (Apple Push Notification service) carry each notification to your phone. Google acts as our processor under the Firebase Data Processing and Security Terms. They receive your phone's token, the notification text (a name and a wine) and the ids Glug needs to open the right screen when you tap it, never your phone number, email address or logs. An undelivered notification is held for at most 24 hours. Firebase also keeps an installation identifier for the app on your phone.</p>
     <p>You control notifications with the switch in <strong>Profile &rarr; Settings &rarr; Notifications</strong> and in your phone's own settings. Turning the switch off stops notifications to that phone at once: the phone discards its token and Glug marks the stored token as off. Signing out of a phone deletes that phone's token from Glug. A phone that has not opened Glug in 270 days stops receiving notifications. When you delete your account in the app, every token is deleted and the phone you use asks Firebase to delete its installation identifier, which Google removes within 180 days. We do not use notifications for marketing.</p>
+
+    <h2 id="restaurants">Restaurants and your city</h2>
+    <p>When you scan a wine list, you can add the restaurant you are at. It is always optional. You find it by typing its name, and you can change or remove it later. Your recent scans then show the restaurant's name, and if you log a wine from that scan, the log is filled in with the restaurant, which you can remove from the log.</p>
+    <p>You can also set your city in <strong>Profile &rarr; Settings</strong>, so that restaurants near it come first when you search. Until you set one, Glug uses New York. Glug uses your city only for that.</p>
+    <p>Glug never uses your phone's location for this. What you type in the restaurant or city search is sent through our server to Google Maps Platform (Places API) to find matches, together with the center of your city when you search for a restaurant. Google does not receive your name, phone number or account from Glug. We do not store what you type, only the place you pick.</p>
+    <p>Only you see the restaurants on your scans and logs, and your city. They never appear on your profile, in the feed, on a shared log or anywhere else other Glug users can see. Within Glug, our team may count how many scans were made at each restaurant across all users, to understand where Glug is used. Those counts do not name you. We may share totals like these with restaurants, never in a way that identifies you.</p>
 
     <h2>Keeping Glug respectful</h2>
     <p>Comments that contain offensive words are blocked before they are posted. You can report any profile, log or comment. Reports go to the Glug team, and the person you report is not told who reported them. We review reports within 24 hours and remove content, and suspend or delete accounts, that break our <a href="/terms">Terms of Use</a>. You can also block anyone. A block removes follows and follow requests between you and hides each of you from the other in Glug. The person you block is not told.</p>
@@ -101,12 +110,13 @@
       <li><strong>Apple</strong> — iOS app distribution (App Store and TestFlight), device-level permissions, and delivery of push notifications to iPhones (Apple Push Notification service)</li>
       <li><strong>Google</strong> — Android app distribution (Google Play) and device-level permissions</li>
       <li><strong>Google Firebase Cloud Messaging</strong>, our processor under the Firebase Data Processing and Security Terms, delivers push notifications to iPhones and Android phones if you turn them on (see <a href="#notifications">Push notifications</a>)</li>
+      <li><strong>Google Maps Platform (Places API)</strong> finds restaurants and cities from what you type in the restaurant and city search, through our server (see <a href="#restaurants">Restaurants and your city</a>)</li>
       <li><strong>Google Workspace</strong> — internal dashboards we use to operate Glug receive aggregate usage statistics and display names, never phone numbers or email addresses</li>
     </ul>
     <p>We do not sell your data to any third party and do not share it with advertisers.</p>
 
     <h2>Data retention</h2>
-    <p>We retain your account data for as long as your account is active. Photos you scan are stored in private storage and are not automatically deleted while your account is active; deleting a menu scan from your scan history also deletes its photos, and all of your scanned photos are deleted when you delete your account. Your profile photo is not private: it is stored with Supabase and served from a link that anyone who has it can open. It is deleted when you remove or replace it, or when you delete your account. Your taste profile and ratings are stored as long as your account exists. Reports you send are deleted when you delete your account. A report someone else sends about you or your content is kept as a record of moderation after that content or your account is deleted. It keeps no copy of what was reported, only the reason and any note the reporter wrote. Push tokens are kept while a phone stays signed in with notifications on: a token is deleted when you sign out of that phone, when the phone replaces it with a new one, and when you delete your account. A token you switched off stays stored, marked off, until you sign out of that phone or delete your account.</p>
+    <p>We retain your account data for as long as your account is active. Photos you scan are stored in private storage and are not automatically deleted while your account is active; deleting a menu scan from your scan history also deletes its photos, and all of your scanned photos are deleted when you delete your account. Your profile photo is not private: it is stored with Supabase and served from a link that anyone who has it can open. It is deleted when you remove or replace it, or when you delete your account. Your taste profile and ratings are stored as long as your account exists. Reports you send are deleted when you delete your account. A report someone else sends about you or your content is kept as a record of moderation after that content or your account is deleted. It keeps no copy of what was reported, only the reason and any note the reporter wrote. Push tokens are kept while a phone stays signed in with notifications on: a token is deleted when you sign out of that phone, when the phone replaces it with a new one, and when you delete your account. A token you switched off stays stored, marked off, until you sign out of that phone or delete your account. A restaurant on a scan is kept with that scan: it is deleted when you remove it from the scan, when you delete the scan, or when you delete your account. The restaurant saved with a log is a separate copy: it is deleted when you remove it from the log, when you delete the log, or when you delete your account, and deleting the scan does not remove it from the log. Your city is kept until you reset it in Settings or delete your account.</p>
 
     <h2>Your rights</h2>
     <p>You can, at any time:</p>
@@ -116,7 +126,7 @@
       <li>Request deletion of your account and all associated data</li>
       <li>Withdraw consent for data collection</li>
     </ul>
-    <p>To delete your account, go to <strong>Profile &rarr; Settings &rarr; Delete account</strong> within the app. This immediately and permanently removes your account and its personal data, including your profile, logs, preferences, scan history, scanned photos, profile photo, follows and follow requests, likes, comments (including those on other people's logs), blocks, notifications, push tokens and the reports you sent. You can also <a href="mailto:privacy@glug-wine.com">email us</a> to request deletion directly. Our <a href="/delete-account">Delete your account</a> page explains exactly what is deleted, what is kept, and how to delete single logs, scans, comments or your profile photo instead.</p>
+    <p>To delete your account, go to <strong>Profile &rarr; Settings &rarr; Delete account</strong> within the app. This immediately and permanently removes your account and its personal data, including your profile, logs, preferences, scan history, scanned photos, profile photo, follows and follow requests, likes, comments (including those on other people's logs), blocks, notifications, push tokens, the restaurants on your scans and logs, your city and the reports you sent. You can also <a href="mailto:privacy@glug-wine.com">email us</a> to request deletion directly. Our <a href="/delete-account">Delete your account</a> page explains exactly what is deleted, what is kept, and how to delete single logs, scans, comments or your profile photo instead.</p>
 
     <h2>Age</h2>
     <p>Glug is an alcohol-related app intended for users aged 21 and over in the United States, or the legal drinking age in your country. We do not knowingly collect data from anyone below the legal drinking age. If you believe an underage user has created an account, contact us at <a href="mailto:privacy@glug-wine.com">privacy@glug-wine.com</a> and we will delete it promptly.</p>
