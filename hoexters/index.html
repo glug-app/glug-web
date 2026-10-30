@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>glug · Hoexter's</title>
+  <meta name="description" content="Hoexter's wine list on Glug.">
+  <meta name="robots" content="noindex">
+  <meta name="theme-color" content="#464B36">
+  <link rel="icon" href="/assets/favicon-32.png" type="image/png">
+  <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+  <link rel="preload" href="/assets/fonts/newsreader-latin-300-normal.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="/assets/fonts/hanken-grotesk-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <main class="hero profile-link">
+    <div class="hero-inner">
+      <img class="logo" src="/assets/glug-logo-white.png" alt="glug — a hand holding a glass of wine" width="956" height="711">
+      <h1 class="tagline">Hoexter's wine list, matched to your taste.</h1>
+      <a class="store-cta" id="open-in-glug" href="#">Open in Glug</a>
+      <p class="beta-note">Glug is in private beta. If you do not have the app yet, write to <a href="mailto:hello@glug-wine.com">hello@glug-wine.com</a>.</p>
+    </div>
+  </main>
+
+  <script>
+    // Demo for the Hoexter's meeting (30 Oct 2026): opens one saved menu scan.
+    // Saved scans are owner-only, so this works only on a phone signed in to the
+    // account that saved the scan. Later this URL becomes the attributed waitlist link.
+    const SCAN_ID = '91c25213-fac1-46ab-a280-7bf9713daa97';
+    const deepLink = 'glug://scanner/menu/result/' + SCAN_ID;
+    document.getElementById('open-in-glug').href = deepLink;
+    // Try once on load; the button stays as the fallback.
+    window.location.href = deepLink;
+  </script>
+</body>
+</html>
