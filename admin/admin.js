@@ -47,7 +47,7 @@ const DEFAULT_VIEW = 'overview';
 
 const state = {
   me: null,
-  includeInternal: false, // the "Hide internal accounts" switch is on by default
+  includeTest: false, // the "Hide test accounts" switch is on by default
   metrics: null,
   metricsBusy: false,
   metricsError: null,
@@ -283,7 +283,7 @@ async function fixtureCall(body) {
     case 'whoami':
       return copy(fixture.whoami);
     case 'metrics':
-      return copy(body.include_internal === true ? fixture.metricsWithInternal ?? fixture.metrics : fixture.metrics);
+      return copy(body.include_test === true ? fixture.metricsWithTest ?? fixture.metrics : fixture.metrics);
     case 'reports': {
       const all = fixture.reports.reports;
       const open = all.filter((r) => r.reviewed_at === null);
@@ -532,7 +532,7 @@ async function loadMetrics() {
   state.metricsError = null;
   updateChrome();
   try {
-    const answer = await call({ action: 'metrics', include_internal: state.includeInternal });
+    const answer = await call({ action: 'metrics', include_test: state.includeTest });
     if (seq !== metricsSeq) return;
     state.metrics = answer;
   } catch (e) {
@@ -579,8 +579,8 @@ function refresh() {
   loadReports();
 }
 
-function toggleInternal() {
-  state.includeInternal = !state.includeInternal;
+function toggleTest() {
+  state.includeTest = !state.includeTest;
   loadMetrics();
 }
 
@@ -595,9 +595,9 @@ function teardown() {
 function buildShell() {
   teardown();
   shell.generated = el('span', { class: 'generated' });
-  shell.switch = el('button', { class: 'switch', type: 'button', role: 'switch', onclick: toggleInternal },
+  shell.switch = el('button', { class: 'switch', type: 'button', role: 'switch', onclick: toggleTest },
     el('span', { class: 'switch-track', 'aria-hidden': 'true' }, el('span', { class: 'switch-knob' })),
-    el('span', {}, 'Hide internal accounts'),
+    el('span', {}, 'Hide test accounts'),
   );
   shell.refresh = el('button', { class: 'btn', type: 'button', onclick: refresh }, 'Refresh');
   const name = (typeof state.me?.display_name === 'string' && state.me.display_name.trim()) || 'Admin';
@@ -651,7 +651,7 @@ function updateChrome() {
   shell.generated.textContent = m
     ? `${state.metricsBusy ? 'Refreshing. ' : ''}Data from ${stamp(m.generatedAt, true)}`
     : state.metricsBusy ? 'Loading data' : 'No data loaded';
-  shell.switch.setAttribute('aria-checked', String(!state.includeInternal));
+  shell.switch.setAttribute('aria-checked', String(!state.includeTest));
   shell.refresh.disabled = state.metricsBusy || state.reportsBusy;
 
   const open = state.reports?.open_count ?? m?.admin?.reports?.open ?? 0;
@@ -742,9 +742,9 @@ function hasEvents(m) {
 
 function scopeNote(m) {
   const s = m.admin.scope;
-  return s.includeInternal
-    ? ' Internal accounts are counted.'
-    : ` ${plural(s.internalAccounts, 'internal account is', 'internal accounts are')} left out.`;
+  return s.includeTest
+    ? ' Test accounts are counted.'
+    : ` ${plural(s.testAccounts, 'test account is', 'test accounts are')} left out.`;
 }
 
 function grid(n, ...children) {
@@ -1622,7 +1622,7 @@ function viewRetention(m) {
             series: [{ label: 'Deleted', value: (p) => p.deleted }],
           })),
       ],
-      note('From the anonymous record kept when someone deletes their account: a sign-up week, a deletion week and a platform. Internal accounts are never in it.')),
+      note('From the anonymous record kept when someone deletes their account: a sign-up week, a deletion week and a platform. Test accounts are never in it.')),
   ];
 }
 
