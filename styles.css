@@ -48,6 +48,7 @@
 
   --gutter: 16px;
   --measure: 42rem;
+  --badge-h: 44px; /* visible height of the store badges, on every page */
 }
 
 /* ── Base ────────────────────────────────────────────────────────── */
@@ -133,12 +134,22 @@ img { display: block; }
   font-weight: 500;
 }
 
-.hero-nav a {
+.hero-nav a,
+.hero-link {
   color: var(--bone);
   text-decoration: none;
 }
 
-.hero-nav a:hover { text-decoration: underline; text-underline-offset: 3px; }
+.hero-nav a:hover,
+.hero-link:hover { text-decoration: underline; text-underline-offset: 3px; }
+
+/* Same type as the nav links, for the link under the hero's store badge. The
+   padding gives a thumb-sized tap target. */
+.hero-link {
+  font-size: 0.875rem;
+  font-weight: 500;
+  padding: 0.375rem 0;
+}
 
 .hero-inner {
   max-width: var(--measure);
@@ -344,7 +355,7 @@ img { display: block; }
 /* ── Wider screens ───────────────────────────────────────────────── */
 
 @media (min-width: 640px) {
-  :root { --gutter: 24px; }
+  :root { --gutter: 24px; --badge-h: 48px; }
 
   .hero { padding: 1.75rem var(--gutter) 7.5rem; }
 
@@ -373,7 +384,29 @@ img { display: block; }
 
 .profile-link .store-cta[hidden] { display: none; }
 
-.profile-link .beta-note { font-size: 0.875rem; color: var(--dust); }
+/* ── Store badges (home, /u/<id>, /hoexters, /waitlist/thanks) ───── */
+
+/* Official badges, unmodified. --badge-h (see Tokens) is the VISIBLE badge
+   height on every page, so the home and thanks pages always match (Apple's
+   minimum on screen is 40px). Apple's SVG is the badge alone, so it gets its
+   clear space, a quarter of its height, as margin on the link. That keeps the
+   space out of the tap target. */
+.apple-badge {
+  display: block;
+  margin: calc(var(--badge-h) / 4);
+}
+
+.apple-badge img {
+  height: var(--badge-h);
+  width: auto;
+}
+
+/* The badge with the Android link under it (home, /u/<id>, /hoexters) */
+.get-app {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
 
 /* ── Waitlist (/waitlist) ────────────────────────────────────────── */
 
@@ -424,14 +457,11 @@ img { display: block; }
 
 .waitlist-thanks .lede { max-width: 30rem; margin: 0 auto 2rem; }
 
-/* Official badges, unmodified. --badge-h is the VISIBLE badge height
-   (Apple's minimum on screen is 40px). Apple's SVG is the badge alone,
-   so it gets its clear space (a quarter of its height) as margin.
-   Google's PNG already carries its clear space: the visible badge is
-   168 of its 250px, so the image is scaled to make that 168 equal
+/* Official badges, unmodified. The Apple badge is .apple-badge (see Store
+   badges above). Google's PNG already carries its clear space: the visible
+   badge is 168 of its 250px, so the image is scaled to make that 168 equal
    --badge-h and the two badges match. */
 .store-badges {
-  --badge-h: 44px;
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
@@ -440,12 +470,6 @@ img { display: block; }
 }
 
 .store-badge { display: flex; flex-direction: column; align-items: center; }
-
-.store-badge-apple img {
-  height: var(--badge-h);
-  width: auto;
-  margin: calc(var(--badge-h) / 4);
-}
 
 .store-badge-google img {
   height: calc(var(--badge-h) * 250 / 168);
@@ -456,8 +480,4 @@ img { display: block; }
   margin: 0;
   font-size: 0.8125rem;
   color: var(--sage);
-}
-
-@media (min-width: 640px) {
-  .store-badges { --badge-h: 48px; }
 }
