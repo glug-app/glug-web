@@ -4,8 +4,20 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>glug</title>
-  <meta name="description" content="Glug — knowing wine is just about knowing what you like. Scan a wine list, log what you drink, and get recommendations that match your taste.">
+  <meta name="description" content="Glug learns your taste from the wines you log and helps you find the bottle you are most likely to like on any wine list.">
   <meta name="theme-color" content="#464B36">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="glug">
+  <meta property="og:description" content="Glug learns your taste from the wines you log and helps you find the bottle you are most likely to like on any wine list.">
+  <meta property="og:image" content="https://www.glug-wine.com/assets/photos/bar-counter-1200.jpg">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="900">
+  <meta property="og:image:alt" content="Two bottles of wine and two glasses, one red and one orange, on a restaurant counter with the kitchen at work behind.">
+  <meta property="og:url" content="https://www.glug-wine.com/">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="glug">
+  <meta name="twitter:description" content="Glug learns your taste from the wines you log and helps you find the bottle you are most likely to like on any wine list.">
+  <meta name="twitter:image" content="https://www.glug-wine.com/assets/photos/bar-counter-1200.jpg">
   <link rel="icon" href="/assets/favicon-32.png" type="image/png">
   <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
   <link rel="preload" href="/assets/fonts/ysabeau-office-latin-600-normal.woff2" as="font" type="font/woff2" crossorigin>
@@ -13,29 +25,128 @@
   <link rel="stylesheet" href="/styles.css">
 </head>
 <body>
-  <main>
-    <section class="hero">
-      <nav class="hero-nav" aria-label="Main">
-        <a href="/support">Support</a>
-        <a href="/privacy">Privacy Policy</a>
-      </nav>
-      <div class="hero-inner">
-        <img class="logo" src="/assets/glug-logo-white.png" alt="glug — a hand holding a glass of wine" width="956" height="711">
-        <p class="tagline">knowing wine is just about knowing what you like</p>
-        <div class="get-app">
+  <main class="home">
+
+    <!-- 1. Hero -->
+    <section class="home-photo home-hero">
+      <img src="/assets/photos/bar-counter-1200.jpg" srcset="/assets/photos/bar-counter-1200.jpg 1200w, /assets/photos/bar-counter-2400.jpg 2400w" sizes="100vw" width="1200" height="900" alt="Two bottles of wine and two glasses, one red and one orange, on a restaurant counter with the kitchen at work behind." fetchpriority="high">
+      <div class="home-wrap">
+        <img class="home-hero-logo" src="/assets/glug-logo-white.png" alt="glug" width="956" height="711">
+      </div>
+      <div class="home-wrap home-hero-copy">
+        <h1>Knowing wine is just about <strong>knowing what you like.</strong></h1>
+        <p>Glug learns your tastes from the wines you log and helps you find the bottle you're most likely to like on any list.</p>
+        <div class="get-app get-app-start">
           <a class="apple-badge" href="https://apps.apple.com/app/id6791446035"><img src="/assets/badges/app-store-badge-black.svg" alt="Download on the App Store" width="120" height="40"></a>
           <a class="hero-link" href="/waitlist">On Android? Join the waitlist</a>
         </div>
       </div>
     </section>
 
-    <section class="band">
-      <div class="band-inner">
-        <h2>Wine, minus the guesswork</h2>
-        <p>Snap a photo of a wine list and Glug matches it against your personal taste profile. Log the bottles you drink, and every glass sharpens your recommendations.</p>
-        <a class="store-cta" href="/support">Questions? Visit Support</a>
+    <!-- 2. How it works -->
+    <section class="home-how" aria-labelledby="how-heading">
+      <div class="home-wrap">
+        <h2 id="how-heading">For when the wine list lands on your side of the table.</h2>
+        <div class="home-split">
+          <img class="home-phone" src="/assets/photos/app-scan-result.jpg" width="645" height="1398" alt="The Glug scan result screen: photos of a scanned wine list, filters by wine type, and top picks with a match score, such as 94% for a red from Foradori." loading="lazy" decoding="async">
+          <ol class="home-steps" role="list">
+            <li>
+              <div>
+                <p class="home-step-title">Scan the list.</p>
+                <p class="home-step-text">Take a photo of the wine list, or the label on a bottle.</p>
+              </div>
+            </li>
+            <li>
+              <div>
+                <p class="home-step-title">See your matches.</p>
+                <p class="home-step-text">Every wine gets a match score for you. Sort by match or price, and filter by color.</p>
+              </div>
+            </li>
+            <li>
+              <div>
+                <p class="home-step-title">Log what you drink.</p>
+                <p class="home-step-text">Every log teaches Glug a little bit more about what you like. Share what you loved, where you drank it, what stood out.</p>
+              </div>
+            </li>
+          </ol>
+        </div>
       </div>
     </section>
+
+    <!-- 3. The wine list band -->
+    <img class="home-band" src="/assets/photos/table-wine-list-1200.jpg" srcset="/assets/photos/table-wine-list-1200.jpg 900w, /assets/photos/table-wine-list-2400.jpg 1800w" sizes="100vw" width="900" height="1200" alt="A candlelit restaurant table with two glasses of wine, two bottles and a menu resting on the edge." loading="lazy" decoding="async">
+
+    <!-- 4. Your sentence -->
+    <section class="home-sentence" aria-labelledby="sentence-heading">
+      <div class="home-wrap">
+        <h2 id="sentence-heading">See your taste in wine, distilled into a single sentence.</h2>
+        <figure class="home-sentence-figure">
+          <img class="home-sentence-hand" src="/assets/photos/hand-full-olive.png" alt="" width="623" height="711" loading="lazy" decoding="async">
+          <blockquote>
+            <p>I like bright, balanced medium reds and fresh whites with a hint of sweetness.</p>
+          </blockquote>
+          <figcaption>From Adit's Glug profile.</figcaption>
+        </figure>
+        <p class="home-sentence-note">As you drink more, this evolves!</p>
+      </div>
+    </section>
+
+    <!-- 5. Social -->
+    <section class="home-wrap home-split" aria-labelledby="social-heading">
+      <img class="home-round" src="/assets/photos/dinner-table-1200.jpg" srcset="/assets/photos/dinner-table-1200.jpg 900w, /assets/photos/dinner-table-2400.jpg 1800w" sizes="(min-width: 1248px) 556px, (min-width: 768px) 44vw, calc(100vw - 32px)" width="900" height="1200" alt="A candlelit dinner table with shared plates, glasses of white wine and a bottle." loading="lazy" decoding="async">
+      <div class="home-copy">
+        <h2 id="social-heading">Wine is social...so is Glug!</h2>
+        <p>See what your friends are drinking, find your next bottle through theirs!</p>
+      </div>
+    </section>
+
+    <!-- 6. Every wine in one place -->
+    <section class="home-wrap" aria-labelledby="logs-heading">
+      <div class="home-split home-split-flip">
+        <img class="home-phone" src="/assets/photos/app-logs.jpg" width="645" height="1398" alt="The Glug logs screen: a list of logged wines, each with a glass rating, a note count and a save button." loading="lazy" decoding="async">
+        <div class="home-copy">
+          <h2 id="logs-heading">Every wine you drink, in one place</h2>
+          <p>Store every bottle you drink, in restaurants or at home, in one place with all your notes, ratings and more! So you can track down that one bottle you loved.</p>
+          <p>Tag the restaurant too, so you always know where you had it.</p>
+        </div>
+      </div>
+      <div class="home-shelves">
+        <img src="/assets/photos/shelf-reds-1200.jpg" srcset="/assets/photos/shelf-reds-1200.jpg 900w, /assets/photos/shelf-reds-2400.jpg 1800w" sizes="(min-width: 1248px) 389px, (min-width: 768px) 30vw, calc((100vw - 32px) * 0.72)" width="900" height="1200" alt="A wooden shelf of red wine bottles with prices chalked on them and a glass of red wine in front." loading="lazy" decoding="async">
+        <img src="/assets/photos/shelf-whites-1200.jpg" srcset="/assets/photos/shelf-whites-1200.jpg 900w, /assets/photos/shelf-whites-2400.jpg 1800w" sizes="(min-width: 1248px) 389px, (min-width: 768px) 30vw, calc((100vw - 32px) * 0.72)" width="900" height="1200" alt="Pale wine bottles with hand-drawn labels on a black metal shelf, with a restaurant dining room behind." loading="lazy" decoding="async">
+        <img src="/assets/photos/pink-wall-shelves-1200.jpg" srcset="/assets/photos/pink-wall-shelves-1200.jpg 900w, /assets/photos/pink-wall-shelves-2400.jpg 1800w" sizes="(min-width: 1248px) 389px, (min-width: 768px) 30vw, calc((100vw - 32px) * 0.72)" width="900" height="1200" alt="Wine bottles on three wooden shelves against a pink-lit brick wall, beside two chalkboard menus." loading="lazy" decoding="async">
+      </div>
+    </section>
+
+    <!-- 7. A note from us -->
+    <section class="home-wrap home-note" aria-label="A note from us">
+      <img class="home-note-hand" src="/assets/photos/hand-full-olive.png" alt="" width="623" height="711" loading="lazy" decoding="async">
+      <div>
+        <p>We're so excited you're here! We love wine, and we've always been the designated wine friend. We think everyone deserves one at the table, so we built Glug. We're on a mission to get more people ordering wine they love, without the pretense.</p>
+        <p class="home-note-sign">Sadhana and Adit</p>
+      </div>
+    </section>
+
+    <!-- 8. Feedback -->
+    <section class="home-wrap home-feedback" aria-labelledby="feedback-heading">
+      <h2 id="feedback-heading">Share your feedback</h2>
+      <p>Share all feedback with us at <a href="mailto:hello@glug-wine.com">hello@glug-wine.com</a>.</p>
+    </section>
+
+    <!-- 9. Get on the list -->
+    <section class="home-join" aria-labelledby="join-heading">
+      <div class="home-wrap home-join-inner">
+        <div>
+          <h2 id="join-heading">Get on the list.</h2>
+          <p>Glug lets people in a few at a time. Get the app to join the list.</p>
+          <div class="get-app get-app-start">
+            <a class="apple-badge" href="https://apps.apple.com/app/id6791446035"><img src="/assets/badges/app-store-badge-black.svg" alt="Download on the App Store" width="120" height="40" loading="lazy"></a>
+            <a class="hero-link" href="/waitlist">On Android? Join the waitlist</a>
+          </div>
+        </div>
+        <img class="home-join-hand" src="/assets/photos/hand-full-white.png" alt="" width="623" height="711" loading="lazy" decoding="async">
+      </div>
+    </section>
+
   </main>
 
   <footer class="site-footer">

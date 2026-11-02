@@ -115,7 +115,7 @@ img { display: block; }
   text-underline-offset: 3px;
 }
 
-/* ── Home: hero ──────────────────────────────────────────────────── */
+/* ── Olive hero (/u/<id>, /hoexters) ─────────────────────────────── */
 
 .hero {
   background: var(--vine-olive);
@@ -124,32 +124,17 @@ img { display: block; }
   text-align: center;
 }
 
-.hero-nav {
-  display: flex;
-  justify-content: flex-end;
-  gap: 1.5rem;
-  max-width: 64rem;
-  margin: 0 auto 3.75rem;
-  font-size: 0.875rem;
-  font-weight: 500;
-}
-
-.hero-nav a,
+/* The Android link under a store badge (home, /u/<id>, /hoexters): small, bone,
+   underline on hover. The padding gives a thumb-sized tap target. */
 .hero-link {
   color: var(--bone);
   text-decoration: none;
-}
-
-.hero-nav a:hover,
-.hero-link:hover { text-decoration: underline; text-underline-offset: 3px; }
-
-/* Same type as the nav links, for the link under the hero's store badge. The
-   padding gives a thumb-sized tap target. */
-.hero-link {
   font-size: 0.875rem;
   font-weight: 500;
   padding: 0.375rem 0;
 }
+
+.hero-link:hover { text-decoration: underline; text-underline-offset: 3px; }
 
 .hero-inner {
   max-width: var(--measure);
@@ -172,32 +157,7 @@ img { display: block; }
   line-height: 1.3;
 }
 
-/* ── Home: light band ────────────────────────────────────────────── */
-
-.band {
-  background: var(--bone);
-  padding: 4rem var(--gutter);
-  text-align: center;
-}
-
-.band-inner {
-  max-width: var(--measure);
-  margin: 0 auto;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 1.5rem;
-}
-
-.band h2 {
-  font-size: clamp(1.5rem, 5vw, 1.875rem);
-  color: var(--ink);
-}
-
-.band p {
-  color: var(--sage);
-  max-width: 34rem;
-}
+/* ── Button (/u/<id>, /hoexters, /waitlist) ──────────────────────── */
 
 .store-cta {
   display: inline-block;
@@ -359,14 +319,12 @@ img { display: block; }
 
   .hero { padding: 1.75rem var(--gutter) 7.5rem; }
 
-  .hero-nav { margin-bottom: 5.5rem; }
-
   .site-header { padding-top: 1.75rem; }
 
   .page { padding-top: 3rem; }
 }
 
-/* ── Light button on the olive hero (home, /u/<id>) ─────────────── */
+/* ── Light button on the olive hero (/u/<id>, /hoexters) ─────────── */
 
 .hero .store-cta { background: var(--bone); color: var(--vine-olive); }
 
@@ -480,4 +438,358 @@ img { display: block; }
   margin: 0;
   font-size: 0.8125rem;
   color: var(--sage);
+}
+
+/* ── Home (/) ────────────────────────────────────────────────────── */
+
+.home {
+  --section-space: clamp(64px, 10vw, 128px);
+  --wide: 1200px;
+}
+
+/* One gap between sections at every width. The bands that have their own
+   background carry their padding inside, so the gap never doubles. */
+.home > * + * { margin-top: var(--section-space); }
+
+/* The hero, How it works, the wine list band and the sentence section meet
+   edge to edge. How it works carries its space inside as padding, so it is the
+   only page background between the hero and the sentence section. */
+.home-how,
+.home-band,
+.home-sentence { margin-top: 0; }
+
+.home-wrap {
+  width: 100%;
+  max-width: calc(var(--wide) + 2 * var(--gutter));
+  margin-inline: auto;
+  padding-inline: var(--gutter);
+}
+
+/* :where keeps these defaults at zero specificity, so a section class can
+   override them without a fight. */
+:where(.home) h1,
+:where(.home) h2 { text-wrap: balance; }
+
+:where(.home) h2 {
+  font-size: clamp(1.75rem, 4.2vw, 3rem);
+  line-height: 1.1;
+}
+
+:where(.home) p {
+  font-size: clamp(1.0625rem, 0.95rem + 0.5vw, 1.25rem);
+  line-height: 1.5;
+}
+
+/* Photo band (the hero): the photo fills the band, a dark scrim sits behind
+   the text, and the text sits at the bottom. */
+.home-photo {
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--ink);
+  color: var(--bone);
+}
+
+.home-photo > img {
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.home-photo::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: var(--scrim);
+}
+
+/* 1. Hero */
+.home-hero {
+  --scrim:
+    linear-gradient(to bottom, rgba(34, 37, 27, 0.68), rgba(34, 37, 27, 0) 28%),
+    linear-gradient(to top, rgba(34, 37, 27, 0.88), rgba(34, 37, 27, 0.74) 32%, rgba(34, 37, 27, 0) 78%);
+  justify-content: space-between;
+  min-height: clamp(560px, 100vh, 900px);
+  min-height: clamp(560px, 100svh, 900px);
+  padding-block: clamp(20px, 3vw, 28px) clamp(32px, 6vw, 72px);
+}
+
+.home-hero-logo { width: auto; height: 64px; }
+
+.home-hero-copy {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1.25rem;
+}
+
+.home-hero h1 {
+  max-width: 14em;
+  font-size: clamp(2.25rem, 6vw, 4rem);
+  font-weight: 400;
+  line-height: 1.05;
+}
+
+.home-hero h1 strong { font-weight: 600; }
+
+.home-hero p { max-width: 32rem; }
+
+/* Store links aligned left (hero, last band). The page gutter is the badge's
+   left clear space, so the badge needs no margin of its own on that side. */
+.get-app-start { align-items: flex-start; }
+
+.get-app-start .apple-badge { margin-left: 0; }
+
+/* Two columns from 768px: sections 2, 5 and 6 */
+.home-split {
+  display: grid;
+  align-items: center;
+  gap: clamp(32px, 6vw, 48px) clamp(40px, 7vw, 112px);
+}
+
+.home-copy > * + * { margin-top: 1rem; }
+
+.home-copy p { max-width: 30rem; }
+
+/* Phone screenshots sit in a plain frame, with no drawn device */
+.home-phone {
+  justify-self: center;
+  width: min(100%, 300px);
+  height: auto;
+  border: 1px solid var(--dust);
+  border-radius: 36px;
+}
+
+.home-round {
+  width: 100%;
+  height: auto;
+  aspect-ratio: 4 / 5;
+  object-fit: cover;
+  border-radius: 16px;
+}
+
+/* 2. How it works: the heading, then the phone and the steps */
+.home-how { padding-block: var(--section-space); }
+
+.home-how h2 {
+  max-width: 18em;
+  margin-bottom: clamp(40px, 7vw, 80px);
+}
+
+.home-steps {
+  max-width: 34rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: step;
+}
+
+.home-steps li {
+  counter-increment: step;
+  display: grid;
+  grid-template-columns: 2.75rem minmax(0, 1fr);
+  padding-block: 1.5rem;
+  border-top: 1px solid var(--hairline);
+}
+
+.home-steps li:last-child { border-bottom: 1px solid var(--hairline); }
+
+.home-steps li::before {
+  content: counter(step);
+  font-size: 1.75rem;
+  font-weight: 600;
+  line-height: 1.2;
+  color: var(--vine-olive);
+}
+
+.home-step-title {
+  font-size: clamp(1.375rem, 1.1rem + 0.9vw, 1.75rem);
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.home-step-text {
+  margin-top: 0.375rem;
+  color: var(--sage);
+}
+
+/* 3. The wine list band: the photo alone, full bleed, with no text and no
+   scrim. The photo is a portrait, so a wide band shows only a third of it. 75%
+   keeps the wine in the glasses and the top of the menu in view; 62% crops the
+   menu out. Ink fills the band until the photo loads. */
+.home-band {
+  width: 100%;
+  height: clamp(420px, 70vh, 760px);
+  object-fit: cover;
+  object-position: 50% 75%;
+  background: var(--ink);
+}
+
+/* 4. Your sentence */
+.home-sentence {
+  padding-block: var(--section-space);
+  background: var(--sand-warm);
+  text-align: center;
+}
+
+.home-sentence h2 {
+  max-width: 18em;
+  margin-inline: auto;
+}
+
+.home-sentence-figure { margin: clamp(40px, 7vw, 80px) 0 0; }
+
+.home-sentence-hand {
+  width: auto;
+  height: clamp(72px, 9vw, 104px);
+  margin: 0 auto clamp(20px, 3vw, 32px);
+}
+
+.home-sentence blockquote {
+  max-width: 20em;
+  margin: 0 auto;
+  font-size: clamp(28px, 4.5vw, 52px);
+  font-style: italic;
+  font-weight: 400;
+  line-height: 1.2;
+  color: var(--vine-olive);
+  text-wrap: balance;
+}
+
+.home-sentence blockquote p {
+  font-size: inherit;
+  line-height: inherit;
+}
+
+/* vine-olive, not sage: sage on sand-warm is under 4.5:1 */
+.home-sentence figcaption {
+  margin-top: 1.25rem;
+  font-size: 0.9375rem;
+  color: var(--vine-olive);
+}
+
+.home-sentence-note { margin-top: clamp(32px, 5vw, 56px); }
+
+/* 6. Three tall photos: a swipeable row on phones, a grid from 768px */
+.home-shelves {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin: clamp(48px, 7vw, 96px) calc(var(--gutter) * -1) 0;
+  padding-inline: var(--gutter);
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scroll-padding-inline: var(--gutter);
+  scrollbar-width: none;
+}
+
+.home-shelves::-webkit-scrollbar { display: none; }
+
+.home-shelves img {
+  flex: 0 0 72%;
+  height: auto;
+  aspect-ratio: 3 / 4;
+  object-fit: cover;
+  border-radius: 16px;
+  scroll-snap-align: start;
+}
+
+/* 7. A note from us */
+.home-note {
+  display: grid;
+  align-items: center;
+  gap: 28px clamp(40px, 7vw, 96px);
+}
+
+.home-note-hand {
+  width: clamp(120px, 18vw, 200px);
+  height: auto;
+}
+
+.home-note p {
+  max-width: 36rem;
+  font-size: clamp(1.25rem, 1.1rem + 0.4vw, 1.375rem);
+  line-height: 1.5;
+}
+
+.home-note-sign {
+  margin-top: 1.25rem;
+  font-weight: 600;
+  color: var(--vine-olive);
+}
+
+/* 8. Feedback */
+.home-feedback { text-align: center; }
+
+.home-feedback p { margin-top: 1rem; }
+
+.home-feedback a {
+  color: var(--vine-olive);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  white-space: nowrap; /* never split the address at its hyphen */
+}
+
+/* 9. Get on the list */
+.home-join {
+  padding-block: var(--section-space);
+  background: var(--vine-olive);
+  color: var(--bone);
+}
+
+.home-join-inner {
+  display: grid;
+  align-items: center;
+  gap: 32px clamp(40px, 7vw, 96px);
+}
+
+.home-join p {
+  max-width: 30rem;
+  margin-top: 1rem;
+}
+
+.home-join .get-app { margin-top: 1rem; }
+
+/* The hand stays inside the content width: above the heading on phones, and
+   at the right of the copy, centered on it, from 768px. */
+.home-join-hand {
+  order: -1;
+  justify-self: end;
+  width: auto;
+  height: 120px;
+}
+
+@media (min-width: 768px) {
+  .home-split { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+
+  .home-split-flip > :first-child { order: 2; }
+
+  .home-phone { width: min(100%, 340px); }
+
+  .home-shelves {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 16px;
+    margin-inline: 0;
+    padding-inline: 0;
+    overflow: visible;
+  }
+
+  .home-shelves img { width: 100%; }
+
+  .home-note { grid-template-columns: auto minmax(0, 1fr); }
+
+  .home-join-inner { grid-template-columns: minmax(0, 1fr) auto; }
+
+  .home-join-hand { order: 0; height: 240px; }
+}
+
+@media (min-width: 1024px) {
+  .home-hero-logo { height: 88px; }
 }
