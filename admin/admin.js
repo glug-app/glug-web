@@ -768,11 +768,7 @@ function buildShell() {
   shell.buildsText = el('span', {});
   shell.builds = el('button', {
     class: 'btn builds-btn', type: 'button', 'aria-expanded': 'false', 'aria-controls': 'builds-panel',
-    onclick: () => {
-      const open = shell.buildsPanel.hidden;
-      shell.buildsPanel.hidden = !open;
-      shell.builds.setAttribute('aria-expanded', String(open));
-    },
+    onclick: () => setBuildsOpen(shell.buildsPanel.hidden),
   }, shell.buildsText, el('span', { class: 'picker-mark', 'aria-hidden': 'true' }, '▾'));
   shell.buildsQuick = seg('Builds', BUILDS_QUICK, state.builds, setBuilds);
   shell.buildsList = el('div', { class: 'builds-groups' });
@@ -780,6 +776,7 @@ function buildShell() {
     shell.buildsQuick,
     el('p', { class: 'hint' }, 'Applies to figures from app events: opens, sessions, screens, log sources and the Events view. Logs, scans and sign-ups count every build.'),
     shell.buildsList);
+  shell.buildsMenu = el('div', { class: 'builds-menu' }, shell.builds, shell.buildsPanel); // the panel is a popover from its button
   const name = (typeof state.me?.display_name === 'string' && state.me.display_name.trim()) || 'Admin';
 
   const header = el('header', { class: 'top' },
@@ -787,11 +784,10 @@ function buildShell() {
       el('span', { class: 'brand' }, 'glug admin'),
       FIXTURE && el('span', { class: 'chip' }, 'Fixture')),
     el('div', { class: 'top-data' }, shell.generated,
-      el('div', { class: 'top-controls' }, el('div', { class: 'top-filters' }, shell.switch, shell.builds), shell.refresh)),
+      el('div', { class: 'top-controls' }, el('div', { class: 'top-filters' }, shell.switch, shell.buildsMenu), shell.refresh)),
     el('div', { class: 'top-user' },
       el('span', { class: 'who' }, name),
       el('button', { class: 'btn', type: 'button', onclick: () => endSession('') }, 'Sign out')),
-    shell.buildsPanel,
   );
 
   shell.badge = el('span', { class: 'badge', 'aria-hidden': 'true', hidden: true });
@@ -819,6 +815,7 @@ function currentView() {
 function route() {
   const id = location.hash.slice(1);
   state.view = VIEWS.some((v) => v.id === id) ? id : DEFAULT_VIEW;
+  setBuildsOpen(false);
   renderView();
   // keep the current tab in sight in the phone tab row
   const link = shell.links.get(state.view);
@@ -899,6 +896,15 @@ function renderView() {
 const BUILDS_QUICK = [['release', 'Store builds'], ['all', 'All builds']];
 const PLATFORM_ORDER = ['ios', 'android', 'web'];
 const buildsData = { list: null, known: new Map(), drawn: '' }; // the last answer's list; every build seen; what the panel shows
+
+/** The panel floats over the page from the header button and takes no room, so opening it
+ *  moves nothing. A choice in it applies at once and leaves it open; it closes on a press
+ *  outside it, on Escape (see boot) and when the view changes (see route). */
+function setBuildsOpen(open) {
+  if (!shell.buildsPanel) return;
+  shell.buildsPanel.hidden = !open;
+  shell.builds.setAttribute('aria-expanded', String(open));
+}
 
 /** The choice this browser kept, or Store builds. */
 function savedBuilds() {
@@ -2981,6 +2987,15 @@ async function boot() {
     if (!shell.main) return;
     route();
     window.scrollTo(0, 0);
+  });
+  // the Builds panel closes on a press outside it and its button, and on Escape
+  document.addEventListener('pointerdown', (e) => {
+    if (shell.buildsPanel?.hidden === false && !shell.buildsMenu.contains(e.target)) setBuildsOpen(false);
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key !== 'Escape' || shell.buildsPanel?.hidden !== false) return;
+    setBuildsOpen(false);
+    shell.builds.focus();
   });
   // the live Events feed asks only while the tab is visible, and catches up on return
   document.addEventListener('visibilitychange', () => {

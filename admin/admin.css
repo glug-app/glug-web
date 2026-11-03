@@ -228,6 +228,7 @@ button { font: inherit; }
 /* ── The signed-in page: header, views, main ─────────────────────── */
 
 .top {
+  position: relative; /* on a phone the Builds panel hangs from the header */
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   grid-template-areas: 'brand user' 'data data';
@@ -282,16 +283,42 @@ button { font: inherit; }
 
 .builds-btn[aria-expanded='true'] { background: var(--sand-warm); }
 
-/* The Builds panel: a row of the header of its own, there only while it is open */
+/* The Builds panel is a popover: it floats over the page and takes no room, so opening it
+   moves nothing. On a phone it spans the screen under the header; from 640px it hangs from
+   the button (below). A long list scrolls inside it. */
+.builds-menu { display: flex; }
+
 .builds-panel {
-  grid-column: 1 / -1;
+  position: absolute;
+  z-index: 100; /* above every other layer: the tab row is 10, the sticky table heads 1 to 3 */
+  top: calc(100% + 1px); /* under the header's hairline */
+  right: 0;
+  left: 0;
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
-  padding: 0.75rem;
-  border: 1px solid var(--hairline);
-  border-radius: 10px;
+  max-height: 60vh;
+  max-height: 60dvh;
+  padding: 0.75rem var(--gutter);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  border-bottom: 1px solid var(--dust);
+  border-radius: 0 0 10px 10px;
   background: var(--card);
+}
+
+@media (min-width: 640px) {
+  .builds-menu { position: relative; }
+
+  .builds-panel {
+    top: calc(100% + 0.375rem);
+    right: auto;
+    left: 0; /* from the button's left edge; from 900px its right edge, below */
+    width: 26.25rem; /* 420px */
+    padding: 0.75rem;
+    border: 1px solid var(--dust);
+    border-radius: 10px;
+  }
 }
 
 .builds-panel > .seg { align-self: flex-start; }
@@ -425,7 +452,7 @@ button { font: inherit; }
 
   .top-filters { flex-wrap: nowrap; column-gap: 1rem; }
 
-  .builds-panel { grid-column: 2; justify-self: end; width: min(100%, 36rem); }
+  .builds-panel { right: 0; left: auto; } /* flush with the button's right edge */
 
   .views {
     grid-column: 1;
