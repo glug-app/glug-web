@@ -850,14 +850,18 @@ button { font: inherit; }
 
 .ev-meta { color: var(--sage); }
 
-.ev-who { display: inline-flex; align-items: center; gap: 0.375rem; min-width: 0; max-width: 100%; color: var(--ink); }
+.ev-who,
+.ev-device { display: inline-flex; align-items: center; gap: 0.375rem; min-width: 0; max-width: 100%; }
+
+.ev-who { color: var(--ink); }
 
 .ev-person { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
-.ev-who .chip { flex: none; padding: 0 0.375rem; font-size: 0.6875rem; }
+.ev-who .chip,
+.ev-device .chip { flex: none; padding: 0 0.375rem; font-size: 0.6875rem; }
 
 .ev-screen,
-.ev-device { min-width: 0; overflow-wrap: anywhere; }
+.ev-platform { min-width: 0; overflow-wrap: anywhere; }
 
 .ev-prop { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
@@ -904,7 +908,7 @@ button { font: inherit; }
 
 @container (min-width: 60rem) {
   .ev-row {
-    grid-template-columns: 6.5rem minmax(0, 8rem) minmax(0, 10rem) minmax(0, 8rem) 6.5rem minmax(0, 1fr);
+    grid-template-columns: 6.5rem minmax(0, 8rem) minmax(0, 10rem) minmax(0, 8rem) 8rem minmax(0, 1fr);
     column-gap: 0.75rem;
   }
 
@@ -921,7 +925,7 @@ button { font: inherit; }
   .ev-device { grid-column: 5; grid-row: 1; }
 
   .ev-screen,
-  .ev-device { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .ev-platform { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
   .ev-props { display: block; grid-column: 6; grid-row: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 

@@ -2227,6 +2227,7 @@ function eventItem(r, isNew) {
   const lateBy = (eventMs(r.received_at) - at) / 1000;
   const props = propEntries(r.props);
   const device = [PLATFORMS[r.platform] ?? r.platform, r.app_version].filter((s) => typeof s === 'string' && s !== '').join(' ');
+  const dev = r.channel === 'dev';
   const prop = ([k, v]) => el('span', { class: 'ev-prop' }, el('span', { class: 'ev-key' }, `${k}:`), ' ', propText(v));
   const row = el('button', { class: 'ev-row', type: 'button', 'aria-expanded': 'false' },
     el('span', { class: 'ev-time' }, Number.isFinite(at) ? el('time', { datetime: new Date(at).toISOString() }, eventClock(at)) : NA),
@@ -2236,7 +2237,9 @@ function eventItem(r, isNew) {
         el('span', { class: 'ev-person' }, personName(r.user)),
         r.user?.test === true && el('span', { class: 'chip' }, 'test')),
       r.screen && el('span', { class: 'ev-screen' }, r.screen),
-      device && el('span', { class: 'ev-device' }, device)),
+      (device || dev) && el('span', { class: 'ev-device' },
+        device && el('span', { class: 'ev-platform' }, device),
+        dev && el('span', { class: 'chip' }, 'dev'))),
     props.length > 0 && el('span', { class: 'ev-props' },
       props.slice(0, 3).map(prop),
       props.length > 3 && el('span', { class: 'ev-prop ev-key' }, `+${props.length - 3} more`)),
@@ -2291,7 +2294,15 @@ function eventDetail(r) {
       pair('App version', text(r.app_version)),
       pair('Build', text(r.build)),
       pair('OS', text(r.os_version)),
-      pair('Session', text(r.session_id))),
+      pair('Session', text(r.session_id)),
+      pair('Order in session', text(r.seq)),
+      pair('Schema version', text(r.schema_version)),
+      pair('Build channel', text(r.channel)),
+      pair('Commit', text(r.commit)),
+      pair('Phone model', text(r.device_model)),
+      pair('Language', text(r.locale)),
+      pair('Time zone', text(r.timezone)),
+      pair('Online', r.is_online === true ? 'Yes' : r.is_online === false ? 'No' : NA)),
     el('div', { class: 'ev-section' },
       el('p', { class: 'ev-head' }, 'Props'),
       props.length > 0
