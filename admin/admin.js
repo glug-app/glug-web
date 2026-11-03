@@ -1728,10 +1728,10 @@ function eventsChoices() {
 
 const nyParts = new Intl.DateTimeFormat('en-US', {
   timeZone: TZ, hourCycle: 'h23', year: 'numeric', month: '2-digit', day: '2-digit',
-  hour: '2-digit', minute: '2-digit', second: '2-digit',
+  hour: '2-digit', minute: '2-digit', second: '2-digit', timeZoneName: 'short',
 });
 
-/** An instant's New York wall clock: { year, month, day, hour, minute, second } as digits. */
+/** An instant's New York wall clock: { year, month, day, hour, minute, second } as digits, and timeZoneName (EST or EDT). */
 function nyClock(t) {
   const out = {};
   for (const { type, value } of nyParts.formatToParts(new Date(t))) out[type] = value;
@@ -1752,6 +1752,13 @@ function eventClock(t) {
   if (p.year === now.year && p.month === now.month && p.day === now.day) return time;
   const date = `${MONTHS[Number(p.month) - 1]} ${Number(p.day)}`;
   return p.year === now.year ? `${date}, ${time}` : `${date}, ${p.year}, ${time}`;
+}
+
+/** The date and time in New York to the millisecond: "Nov 2, 2026, 21:14:09.482 EST". */
+function eventInstant(t) {
+  const p = nyClock(t);
+  const ms = String(new Date(t).getUTCMilliseconds()).padStart(3, '0');
+  return `${MONTHS[Number(p.month) - 1]} ${Number(p.day)}, ${p.year}, ${p.hour}:${p.minute}:${p.second}.${ms} ${p.timeZoneName}`;
 }
 
 /** An instant as a datetime-local value in New York time: "2026-11-03T14:30". */
@@ -2244,18 +2251,53 @@ function eventItem(r, isNew) {
   return el('li', { class: cls('event', isNew && 'is-new'), 'data-id': r.id }, row, more);
 }
 
-/** Every prop as key: value, then the session, build and OS. */
+/** The opened row: every field the events action returns (ADMIN_DASHBOARD.md 6.2), labelled,
+ *  then every prop, then Copy JSON with the row exactly as it came. */
 function eventDetail(r) {
+  const pair = (label, ...value) => [el('dt', {}, label), el('dd', {}, value)];
+  const text = (v) => (v === null || v === undefined || v === '' ? NA : String(v));
+  const time = (raw) => {
+    const t = eventMs(raw);
+    return [Number.isFinite(t) ? eventInstant(t) : NA, el('span', { class: 'ev-raw' }, text(raw))];
+  };
   const props = propEntries(r.props);
-  const line = (key, value) => el('li', {}, el('span', { class: 'ev-key' }, `${key}:`), ' ', value);
+  const copy = el('button', { class: 'btn', type: 'button' }, 'Copy JSON');
+  let reset = null;
+  copy.addEventListener('click', async () => {
+    let copied = false;
+    try {
+      await navigator.clipboard.writeText(JSON.stringify(r, null, 2));
+      copied = true;
+    } catch {
+      // no clipboard in this page, or the browser refused it
+    }
+    copy.textContent = copied ? 'Copied' : 'Could not copy';
+    clearTimeout(reset);
+    reset = setTimeout(() => {
+      copy.textContent = 'Copy JSON';
+    }, 2000);
+  });
   return [
-    props.length > 0
-      ? el('ul', { class: 'ev-list' }, props.map(([k, v]) => line(k, propText(v))))
-      : el('p', { class: 'ev-key' }, 'No props.'),
-    el('ul', { class: 'ev-list' },
-      line('Session', r.session_id ?? NA),
-      line('Build', r.build ?? NA),
-      line('OS', r.os_version ?? NA)),
+    el('dl', { class: 'ev-fields' },
+      pair('Event id', text(r.id)),
+      pair('Event', text(r.name)),
+      pair('Occurred', time(r.occurred_at)),
+      pair('Received', time(r.received_at)),
+      pair('Person', personName(r.user)),
+      pair('User id', text(r.user?.id)),
+      pair('Test account', r.user?.test === true ? 'Yes' : 'No'),
+      pair('Screen', text(r.screen)),
+      pair('Platform', text(r.platform)),
+      pair('App version', text(r.app_version)),
+      pair('Build', text(r.build)),
+      pair('OS', text(r.os_version)),
+      pair('Session', text(r.session_id))),
+    el('div', { class: 'ev-section' },
+      el('p', { class: 'ev-head' }, 'Props'),
+      props.length > 0
+        ? el('dl', { class: 'ev-fields' }, props.map(([k, v]) => pair(k, propText(v))))
+        : el('p', { class: 'muted' }, 'None')),
+    el('div', {}, copy),
   ];
 }
 
