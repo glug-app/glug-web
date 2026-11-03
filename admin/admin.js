@@ -26,6 +26,8 @@ const FIXTURE = ['localhost', '127.0.0.1'].includes(location.hostname) &&
   new URLSearchParams(location.search).get('fixture') === '1';
 const NA = 'n/a';
 const EVENTS_PENDING = 'Starts with app version 1.0.1.';
+const NO_BUILD_EVENTS = 'No events from these builds yet.';
+const BUILDS_STORE = 'glug-admin-builds'; // localStorage: the Builds choice, kept per browser
 const TZ = 'America/New_York';
 
 // The views, in nav order. `data` says which answer a view is drawn from.
@@ -49,7 +51,9 @@ const DEFAULT_VIEW = 'overview';
 const state = {
   me: null,
   includeTest: false, // the "Hide test accounts" switch is on by default
+  builds: savedBuilds(), // "release" (store builds), "all" or picked build keys
   metrics: null,
+  metricsBuilds: null, // the builds choice the loaded metrics answer
   metricsBusy: false,
   metricsError: null,
   reports: null,
@@ -286,7 +290,7 @@ async function fixtureCall(body) {
     case 'whoami':
       return copy(fixture.whoami);
     case 'metrics':
-      return copy(body.include_test === true ? fixture.metricsWithTest ?? fixture.metrics : fixture.metrics);
+      return fixtureMetrics(body);
     case 'reports': {
       const all = fixture.reports.reports;
       const open = all.filter((r) => r.reviewed_at === null);
@@ -322,21 +326,28 @@ async function fixtureCall(body) {
 // cursor this fixture did not hand out, are a 400 like the function's.
 let fixtureEventRows = null;
 let fixtureLater = [];
+let fixtureShift = 0;
 const fixtureCursors = new Set();
 
+function fixtureEventsInit() {
+  if (fixtureEventRows) return;
+  fixtureShift = Math.round((Date.now() - Math.max(...fixture.events.rows.map((r) => eventMs(r.received_at)))) / 1000) * 1000;
+  const move = (r) => ({ ...r, occurred_at: shiftStamp(r.occurred_at, fixtureShift), received_at: shiftStamp(r.received_at, fixtureShift) });
+  fixtureEventRows = fixture.events.rows.map(move);
+  fixtureLater = fixture.events.later.map((batch) => batch.map(move));
+}
+
 function fixtureEvents(b) {
-  if (!fixtureEventRows) {
-    const shift = Math.round((Date.now() - Math.max(...fixture.events.rows.map((r) => eventMs(r.received_at)))) / 1000) * 1000;
-    const move = (r) => ({ ...r, occurred_at: shiftStamp(r.occurred_at, shift), received_at: shiftStamp(r.received_at, shift) });
-    fixtureEventRows = fixture.events.rows.map(move);
-    fixtureLater = fixture.events.later.map((batch) => batch.map(move));
-  }
-  if (!fixtureEventsQueryOk(b)) throw new ApiError(400, 'invalid_events_query');
+  fixtureEventsInit();
+  const list = fixtureBuilds(b.include_test === true);
+  if (!fixtureEventsQueryOk(b) || (list && !fixtureBuildsOk(b.builds))) throw new ApiError(400, 'invalid_events_query');
   if (b.mode === 'live' && b.after_id !== undefined && fixtureLater.length > 0) fixtureEventRows.push(...fixtureLater.shift());
 
   const micros = (s) => eventMs(s) * 1000 + Number((/\.\d{3}(\d*)/.exec(s)?.[1] ?? '').padEnd(3, '0'));
+  const choice = list ? b.builds ?? 'release' : 'all';
   let rows = fixtureEventRows.filter((r) => (b.include_test === true || !r.user.test) &&
-    (!b.names || b.names.includes(r.name)) && (!b.user_id || r.user.id === b.user_id.toLowerCase()));
+    (!b.names || b.names.includes(r.name)) && (!b.user_id || r.user.id === b.user_id.toLowerCase()) &&
+    fixtureInBuilds(r, choice));
   let next = null;
   if (b.mode === 'live') {
     rows = rows.filter((r) => b.after_id === undefined || r.id > b.after_id)
@@ -360,14 +371,72 @@ function fixtureEvents(b) {
   const recent = fixtureEventRows.filter((r) => micros(r.occurred_at) >= since);
   const people = new Map();
   for (const r of recent) if (b.include_test === true || !r.user.test) people.set(r.user.id, r.user);
-  return structuredClone({
+  const out = {
     rows,
     next,
     latest_id: rows.length > 0 ? Math.max(...rows.map((r) => r.id)) : null,
     names: [...new Set(recent.map((r) => r.name))].sort(),
     people: [...people.values()].sort((x, y) => (x.display_name === null) - (y.display_name === null) ||
       (x.display_name ?? '').localeCompare(y.display_name ?? '', 'en', { sensitivity: 'base' }) || (x.id < y.id ? -1 : 1)),
-  });
+  };
+  if (list) out.builds = fixtureBuildsOut(list);
+  return structuredClone(out);
+}
+
+// The builds scope. fixture.json's `builds` (and `buildsWithTest`, for include_test) is the
+// list a server that knows builds sends; without one, the fixture is a server from before
+// builds: it ignores the key and sends no list. A row's build is the listed one with its
+// platform, version, build, channel and commit.
+
+function fixtureBuilds(includeTest) {
+  const list = includeTest ? fixture.buildsWithTest ?? fixture.builds : fixture.builds;
+  return Array.isArray(list) ? list : null;
+}
+
+/** What a server would refuse: anything but "release", "all" or a list of one or more keys. */
+function fixtureBuildsOk(v) {
+  return v === undefined || v === 'release' || v === 'all' ||
+    (Array.isArray(v) && v.length > 0 && v.every((k) => typeof k === 'string' && k !== ''));
+}
+
+function fixtureInBuilds(r, choice) {
+  if (choice === 'all') return true;
+  if (choice === 'release') return r.channel === 'release';
+  const b = (fixture.buildsWithTest ?? fixture.builds).find((x) =>
+    ['platform', 'app_version', 'build', 'channel', 'commit'].every((k) => x?.[k] === r[k]));
+  return b !== undefined && choice.includes(b.key);
+}
+
+/** The list with its times moved like the event rows'. An entry that is not a build passes as it is. */
+function fixtureBuildsOut(list) {
+  return list.map((x) => (x !== null && typeof x === 'object'
+    ? { ...x, first_seen: shiftStamp(x.first_seen, fixtureShift), last_seen: shiftStamp(x.last_seen, fixtureShift) }
+    : x));
+}
+
+/** metrics, with the builds list when the fixture has one. The event figures are emptied when
+ *  no counted row (a v2 row of a user in scope) is in the choice: the figures stand for every
+ *  build otherwise, a fixture's shortcut. */
+function fixtureMetrics(b) {
+  const inc = b.include_test === true;
+  const m = structuredClone(inc ? fixture.metricsWithTest ?? fixture.metrics : fixture.metrics);
+  const list = fixtureBuilds(inc);
+  if (list && !fixtureBuildsOk(b.builds)) throw new ApiError(400, 'invalid_builds');
+  fixtureEventsInit();
+  const choice = list ? b.builds ?? 'release' : 'all';
+  if (!fixtureEventRows.some((r) => r.schema_version !== null && (inc || !r.user.test) && fixtureInBuilds(r, choice))) {
+    const a = m.admin;
+    a.scope.preferredBasis = 'activity';
+    a.engagement.latest.events = { dau: 0, wau: 0, mau: 0, dauMau: null };
+    for (const d of a.engagement.daily) d.activeByEvents = 0;
+    a.engagement.sessions = { eventRows: 0, sessionsTotal: 0, sessionsMeasured: 0, medianSessionSeconds: null, byWeek: [] };
+    a.engagement.screenViews.byScreen = [];
+    a.platform.appVersions = { ...a.platform.appVersions, users: 0, byVersion: [] };
+    for (const c of a.retention.byEvents) c.weeks = c.weeks.map(() => null);
+    a.restaurants.logsFromScan = null;
+  }
+  if (list) m.builds = fixtureBuildsOut(list);
+  return m;
 }
 
 /** What events.ts parseEventsQuery refuses, near enough to catch a bad request here. */
@@ -423,11 +492,12 @@ function endSession(message) {
 
 function resetData() {
   Object.assign(state, {
-    metrics: null, metricsBusy: false, metricsError: null,
+    metrics: null, metricsBuilds: null, metricsBusy: false, metricsError: null,
     reports: null, reportsBusy: false, reportsError: null, reportsNotice: null,
     events: eventsChoices(),
   });
   Object.assign(pickers, { names: [], people: [], namesKey: '', peopleKey: '', known: new Map() });
+  Object.assign(buildsData, { list: null, known: new Map(), drawn: '' });
   metricsSeq += 1;
   reportsSeq += 1;
 }
@@ -622,9 +692,12 @@ async function loadMetrics() {
   state.metricsError = null;
   updateChrome();
   try {
-    const answer = await call({ action: 'metrics', include_test: state.includeTest });
+    const builds = buildsParam();
+    const answer = await call({ action: 'metrics', include_test: state.includeTest, builds });
     if (seq !== metricsSeq) return;
     state.metrics = answer;
+    state.metricsBuilds = builds;
+    syncBuilds(answer);
   } catch (e) {
     if (e instanceof SignedOut || seq !== metricsSeq) return;
     if (e.status === 403) {
@@ -692,16 +765,33 @@ function buildShell() {
     el('span', {}, 'Hide test accounts'),
   );
   shell.refresh = el('button', { class: 'btn', type: 'button', onclick: refresh }, 'Refresh');
+  shell.buildsText = el('span', {});
+  shell.builds = el('button', {
+    class: 'btn builds-btn', type: 'button', 'aria-expanded': 'false', 'aria-controls': 'builds-panel',
+    onclick: () => {
+      const open = shell.buildsPanel.hidden;
+      shell.buildsPanel.hidden = !open;
+      shell.builds.setAttribute('aria-expanded', String(open));
+    },
+  }, shell.buildsText, el('span', { class: 'picker-mark', 'aria-hidden': 'true' }, '▾'));
+  shell.buildsQuick = seg('Builds', BUILDS_QUICK, state.builds, setBuilds);
+  shell.buildsList = el('div', { class: 'builds-groups' });
+  shell.buildsPanel = el('div', { class: 'builds-panel', id: 'builds-panel', hidden: true },
+    shell.buildsQuick,
+    el('p', { class: 'hint' }, 'Applies to figures from app events: opens, sessions, screens, log sources and the Events view. Logs, scans and sign-ups count every build.'),
+    shell.buildsList);
   const name = (typeof state.me?.display_name === 'string' && state.me.display_name.trim()) || 'Admin';
 
   const header = el('header', { class: 'top' },
     el('div', { class: 'top-brand' },
       el('span', { class: 'brand' }, 'glug admin'),
       FIXTURE && el('span', { class: 'chip' }, 'Fixture')),
-    el('div', { class: 'top-data' }, shell.generated, el('div', { class: 'top-controls' }, shell.switch, shell.refresh)),
+    el('div', { class: 'top-data' }, shell.generated,
+      el('div', { class: 'top-controls' }, el('div', { class: 'top-filters' }, shell.switch, shell.builds), shell.refresh)),
     el('div', { class: 'top-user' },
       el('span', { class: 'who' }, name),
       el('button', { class: 'btn', type: 'button', onclick: () => endSession('') }, 'Sign out')),
+    shell.buildsPanel,
   );
 
   shell.badge = el('span', { class: 'badge', 'aria-hidden': 'true', hidden: true });
@@ -717,6 +807,8 @@ function buildShell() {
   shell.main = el('main', { class: 'main', id: 'main', tabindex: '-1' });
 
   root.append(el('div', { class: 'shell' }, header, shell.nav, shell.main));
+  buildsData.drawn = '';
+  drawBuildsPicker();
   updateChrome();
 }
 
@@ -744,6 +836,7 @@ function updateChrome() {
     ? `${state.metricsBusy ? 'Refreshing. ' : ''}Data from ${stamp(m.generatedAt, true)}`
     : state.metricsBusy ? 'Loading data' : 'No data loaded';
   shell.switch.setAttribute('aria-checked', String(!state.includeTest));
+  updateBuildsPicker();
   shell.refresh.disabled = state.metricsBusy || state.reportsBusy;
 
   const open = state.reports?.open_count ?? m?.admin?.reports?.open ?? 0;
@@ -793,6 +886,162 @@ function renderView() {
   updateChrome();
 }
 
+// ── Builds ──────────────────────────────────────────────────────────────────
+//
+// Which app builds the event figures and the Events view count: every metrics
+// and events call carries `builds`, "release" (the store builds, the server's
+// default), "all", or a list of build keys picked from the `builds` list each
+// answer carries. Logs, scans and sign-ups count every build whatever it says.
+// A server from before the scope ignores the key and sends no list: the panel
+// then offers the two quick choices only, and no figure says the chosen builds
+// have no events, since nothing was filtered.
+
+const BUILDS_QUICK = [['release', 'Store builds'], ['all', 'All builds']];
+const PLATFORM_ORDER = ['ios', 'android', 'web'];
+const buildsData = { list: null, known: new Map(), drawn: '' }; // the last answer's list; every build seen; what the panel shows
+
+/** The choice this browser kept, or Store builds. */
+function savedBuilds() {
+  try {
+    const v = JSON.parse(localStorage.getItem(BUILDS_STORE));
+    if (v === 'release' || v === 'all') return v;
+    const keys = Array.isArray(v) ? [...new Set(v.filter((k) => typeof k === 'string' && k !== ''))].sort() : [];
+    if (keys.length > 0) return keys;
+  } catch {
+    // no storage in this browser, or something in it that is not a choice
+  }
+  return 'release';
+}
+
+function buildsParam() {
+  return Array.isArray(state.builds) ? [...state.builds] : state.builds;
+}
+
+/** A new choice: kept in this browser, then the figures and the Events view load again. */
+function setBuilds(choice) {
+  if (JSON.stringify(choice) === JSON.stringify(state.builds)) return;
+  state.builds = choice;
+  try {
+    localStorage.setItem(BUILDS_STORE, JSON.stringify(choice));
+  } catch {
+    // the choice then lasts until the page closes
+  }
+  drawBuildsPicker(); // an unticked build the list no longer has leaves the panel
+  loadMetrics();
+  restartEvents(); // only when the Events view is open
+}
+
+/** Ticking rows makes a custom choice; ticking none goes back to Store builds. */
+function pickBuild(key, on) {
+  const picked = Array.isArray(state.builds) ? state.builds : [];
+  const next = on ? [...new Set([...picked, key])].sort() : picked.filter((k) => k !== key);
+  setBuilds(next.length > 0 ? next : 'release');
+}
+
+/** "Show all builds", from a figure or the Events view. The button goes when the view
+ *  redraws, so the focus moves to the header control, which now says All builds. */
+function showAllBuilds() {
+  setBuilds('all');
+  shell.builds?.focus({ preventScroll: true });
+}
+
+/** Whether the loaded figures were filtered by build: the server knows builds (its answer
+ *  carries the list) and the choice was not "all". */
+function byBuilds(m) {
+  return Array.isArray(m.builds) && state.metricsBuilds !== 'all';
+}
+
+/** The list comes with every metrics and events answer, and is null from a server that does not know builds. */
+function syncBuilds(answer) {
+  const list = Array.isArray(answer?.builds)
+    ? answer.builds.filter((b, i, all) => typeof b?.key === 'string' && b.key !== '' && all.findIndex((x) => x?.key === b.key) === i)
+    : null;
+  buildsData.list = list;
+  for (const b of list ?? []) buildsData.known.set(b.key, b);
+  drawBuildsPicker();
+}
+
+const buildText = (v) => (typeof v === 'string' || isNum(v) ? String(v).trim() : '');
+
+/** "iOS 1.0.1 (33)": the platform, the version and the build number. */
+function buildName(b) {
+  const build = buildText(b.build);
+  const platform = Object.hasOwn(PLATFORMS, b.platform) ? PLATFORMS[b.platform] : buildText(b.platform);
+  const name = [platform, buildText(b.app_version), build && `(${build})`].filter(Boolean).join(' ');
+  return name || b.key;
+}
+
+/** A last-seen time (or date) as its New York day, "Nov 3", with the year when it is not this one. */
+function seenDay(v) {
+  const t = typeof v === 'string' && ISO_DAY.test(v) ? Date.parse(`${v}T12:00:00Z`) : eventMs(v);
+  if (!Number.isFinite(t)) return NA;
+  const p = nyClock(t);
+  const date = `${MONTHS[Number(p.month) - 1]} ${Number(p.day)}`;
+  return p.year === nyClock(Date.now()).year ? date : `${date}, ${p.year}`;
+}
+
+function buildOrder(x, y) {
+  const rank = (b) => (PLATFORM_ORDER.includes(b.platform) ? PLATFORM_ORDER.indexOf(b.platform) : PLATFORM_ORDER.length);
+  const desc = (a, b) => buildText(b).localeCompare(buildText(a), 'en', { numeric: true });
+  return rank(x) - rank(y) || desc(x.app_version, y.app_version) || desc(x.build, y.build) ||
+    buildText(x.commit).localeCompare(buildText(y.commit)) || (x.key < y.key ? -1 : x.key > y.key ? 1 : 0);
+}
+
+/** The checklist: the server's builds, Store then Dev, and under Not in the list any picked
+ *  build the list does not have now. Redrawn only when what it shows changes, so the live
+ *  feed's answers every 5 s do not rebuild it under the pointer. */
+function drawBuildsPicker() {
+  const holder = shell.buildsList;
+  if (!holder) return;
+  const list = buildsData.list ?? [];
+  const listed = new Set(list.map((b) => b.key));
+  const missing = (Array.isArray(state.builds) ? state.builds : []).filter((k) => !listed.has(k))
+    .map((k) => buildsData.known.get(k) ?? { key: k });
+  const row = (b, gone) => ({
+    key: b.key,
+    name: buildName(b),
+    commit: b.channel !== 'release' ? buildText(b.commit).slice(0, 7) : '',
+    newest: !gone && b.is_newest_release === true,
+    meta: gone ? '' : `${plural(b.users, 'person', 'people')}, last seen ${seenDay(b.last_seen)}`,
+  });
+  const groups = [
+    ['Store', list.filter((b) => b.channel === 'release').sort(buildOrder).map((b) => row(b, false))],
+    ['Dev', list.filter((b) => b.channel !== 'release').sort(buildOrder).map((b) => row(b, false))],
+    ['Not in the list', missing.map((b) => row(b, true)).sort((x, y) => x.name.localeCompare(y.name, 'en', { numeric: true }))],
+  ].filter(([, rows]) => rows.length > 0);
+  const drawn = JSON.stringify(groups);
+  if (drawn === buildsData.drawn) return;
+  buildsData.drawn = drawn;
+
+  const focused = holder.contains(document.activeElement) ? document.activeElement.value : null;
+  clear(holder);
+  for (const [title, rows] of groups) {
+    holder.append(el('fieldset', { class: 'builds-group' }, el('legend', {}, title), rows.map((b) => {
+      const box = el('input', { type: 'checkbox', value: b.key });
+      box.addEventListener('change', () => pickBuild(b.key, box.checked));
+      return el('label', { class: 'pick build-pick' }, box,
+        el('span', { class: 'build-text' },
+          el('span', { class: 'build-name' },
+            b.name,
+            b.commit ? [' ', el('span', { class: 'build-commit' }, b.commit)] : null,
+            b.newest && [' ', el('span', { class: 'chip' }, 'newest')]),
+          b.meta ? [' ', el('span', { class: 'build-meta' }, b.meta)] : null));
+    })));
+  }
+  updateBuildsPicker();
+  if (focused !== null) [...holder.querySelectorAll('input')].find((box) => box.value === focused)?.focus();
+}
+
+/** The header label, the quick choice that is on, and the ticks. */
+function updateBuildsPicker() {
+  if (!shell.builds) return;
+  const b = state.builds;
+  shell.buildsText.textContent = Array.isArray(b) ? plural(b.length, 'build', 'builds') : b === 'all' ? 'All builds' : 'Store builds';
+  BUILDS_QUICK.forEach(([value], i) => shell.buildsQuick.children[i].setAttribute('aria-pressed', String(value === b)));
+  const picked = new Set(Array.isArray(b) ? b : []);
+  for (const box of shell.buildsList.querySelectorAll('input')) box.checked = picked.has(box.value);
+}
+
 // ── Building blocks ─────────────────────────────────────────────────────────
 
 function card(title, ...children) {
@@ -830,8 +1079,24 @@ function pending(label) {
   return el('p', { class: 'pending' }, label && el('span', { class: 'pending-label' }, label), EVENTS_PENDING);
 }
 
+/** What an event figure or the Events view says when the chosen builds have no events, and the way back to every build. */
+function buildsEmptyLine(text = NO_BUILD_EVENTS) {
+  return el('span', { class: 'builds-empty' },
+    el('span', {}, text),
+    el('button', { class: 'btn', type: 'button', onclick: showAllBuilds }, 'Show all builds'));
+}
+
+/** An event figure with nothing to show: pending() while no build has sent an event,
+ *  else the line that says the chosen builds have none. */
+function noEvents(m, label) {
+  if (!byBuilds(m)) return pending(label);
+  return el('div', { class: 'pending' }, label && el('span', { class: 'pending-label' }, label), buildsEmptyLine());
+}
+
+/** Under a build choice only the chosen builds' rows count, while preferredBasis
+ *  can still say "events" because of the other builds. */
 function hasEvents(m) {
-  return m.admin.engagement.sessions.eventRows > 0 || m.admin.scope.preferredBasis === 'events';
+  return m.admin.engagement.sessions.eventRows > 0 || (!byBuilds(m) && m.admin.scope.preferredBasis === 'events');
 }
 
 function scopeNote(m) {
@@ -1616,7 +1881,7 @@ function viewEngagement(m) {
   const activityRow = ['By activity', int(latest.activity.dau), int(latest.activity.wau), int(latest.activity.mau), share(latest.activity.dauMau)];
   const eventsRow = events
     ? ['By events', int(latest.events.dau), int(latest.events.wau), int(latest.events.mau), share(latest.events.dauMau)]
-    : ['By events', { span: 4, text: EVENTS_PENDING, cls: 'pending-cell' }];
+    : ['By events', { span: 4, text: byBuilds(m) ? buildsEmptyLine() : EVENTS_PENDING, cls: 'pending-cell' }];
   const daily = events
     ? [{ label: 'Active by events', value: (d) => d.activeByEvents, style: 0 }, { label: 'Active by activity', value: (d) => d.activeByActivity, style: 1 }]
     : [{ label: 'Active by activity', value: (d) => d.activeByActivity, style: 1 }];
@@ -1627,7 +1892,7 @@ function viewEngagement(m) {
       staticTable(['', 'DAU', 'WAU', 'MAU', 'DAU / MAU'], [eventsRow, activityRow]),
       chartCard({
         id: 'engagement-daily', title: 'Daily active users', x: 'day', points: e.daily, series: daily, legend: true,
-        notes: events ? [] : [pending('Active by events')],
+        notes: events ? [] : [noEvents(m, 'Active by events')],
       })),
     card('Sessions', events
       ? [
@@ -1643,7 +1908,7 @@ function viewEngagement(m) {
           extra: (p) => [`People: ${int(p.users)}`, `Sessions each: ${dec(p.sessionsPerUser, 2)}`],
         }),
       ]
-      : pending()),
+      : noEvents(m)),
     card(`Screen views, last ${e.screenViews.windowDays} days`, events
       ? dataTable({
         id: 'screen-views',
@@ -1655,7 +1920,7 @@ function viewEngagement(m) {
           { key: 'users', label: 'People', num: true, fmt: int },
         ],
       })
-      : pending()),
+      : noEvents(m)),
     card(`Social, ${prettyDates(so.window)}`,
       tiles([
         { label: 'Weekly actives', value: int(so.weeklyActives), sub: 'By activity' },
@@ -1671,7 +1936,7 @@ function viewEngagement(m) {
           breakdown('Users by platform', [
             ['iOS', pf.byPlatform.ios], ['Android', pf.byPlatform.android], ['Web', pf.byPlatform.web], ['Unknown', pf.byPlatform.unknown],
           ], pf.users),
-          !events && note('Until the app sends events, the platform comes from push tokens, so only people who turned on notifications have one.')),
+          !events && !byBuilds(m) && note('Until the app sends events, the platform comes from push tokens, so only people who turned on notifications have one.')),
         el('div', { class: 'stack' },
           subTitle(`App versions, last ${pf.appVersions.windowDays} days`),
           events
@@ -1687,7 +1952,7 @@ function viewEngagement(m) {
               }),
               note(`${plural(pf.appVersions.users, 'person', 'people')} used the app in the window.`),
             ]
-            : pending()))),
+            : noEvents(m)))),
   ];
 }
 
@@ -1916,6 +2181,7 @@ function eventsFilters() {
   if (f.names.length > 0) out.names = [...f.names];
   if (f.userId) out.user_id = f.userId;
   out.include_test = state.includeTest;
+  out.builds = buildsParam();
   return out;
 }
 
@@ -1943,7 +2209,7 @@ function restartEvents() {
   pollTimer = null;
   feed = {
     ids: [], byId: new Map(), loaded: false, busy: false, error: null, errorOlder: false,
-    updatedAt: null, next: null, from: null, to: null, dropped: false, statusKey: null,
+    updatedAt: null, next: null, from: null, to: null, dropped: false, statusKey: null, byBuilds: false,
   };
   clear(evUi.list);
   drawStatus();
@@ -1976,6 +2242,8 @@ async function poll(force = false) {
     const answer = await call(body);
     if (run !== eventsRun) return;
     syncPickers(answer);
+    syncBuilds(answer);
+    target.byBuilds = Array.isArray(answer.builds) && state.builds !== 'all'; // the server filtered by build
     mergeRows(Array.isArray(answer.rows) ? answer.rows : [], target.loaded);
     target.loaded = true;
     target.error = null;
@@ -2079,6 +2347,8 @@ async function loadWindow(older) {
     const answer = await call(body);
     if (run !== eventsRun) return;
     syncPickers(answer);
+    syncBuilds(answer);
+    target.byBuilds = Array.isArray(answer.builds) && state.builds !== 'all';
     for (const r of Array.isArray(answer.rows) ? answer.rows : []) {
       if (!isEventRow(r) || target.byId.has(r.id)) continue;
       const node = eventItem(r, false);
@@ -2118,9 +2388,10 @@ function drawStatus() {
     top.push(['loading']);
   }
   if (feed.loaded && feed.ids.length === 0) {
-    top.push(['empty', live
-      ? (filtered ? 'No events match these filters yet.' : 'No events yet.')
-      : (filtered ? 'No events match these filters in this window.' : 'No events in this window.')]);
+    // under a build choice the way back to every build comes with it; the filters' words stay when they are set
+    top.push([feed.byBuilds ? 'builds' : 'empty', live
+      ? (filtered ? 'No events match these filters yet.' : feed.byBuilds ? NO_BUILD_EVENTS : 'No events yet.')
+      : (filtered ? 'No events match these filters in this window.' : feed.byBuilds ? 'No events from these builds in this window.' : 'No events in this window.')]);
   }
   if (live && feed.dropped) top.push(['note', `Only the newest ${int(EVENTS_KEEP)} are kept on screen.`]);
   const older = !live && feed.error && feed.errorOlder ? `The older events did not load (${errorText(feed.error)}).` : '';
@@ -2131,6 +2402,7 @@ function drawStatus() {
     add(ui.status, top.map(([kind, text]) => {
       if (kind === 'error') return problem(text, live ? () => poll(true) : restartEvents);
       if (kind === 'loading') return loading();
+      if (kind === 'builds') return el('div', { class: 'empty' }, buildsEmptyLine(text));
       return kind === 'empty' ? empty(text) : note(text);
     }));
     clear(ui.olderMsg);
@@ -2324,7 +2596,7 @@ function viewRetention(m) {
     card('By activity', retentionTable('retention-activity', r.byActivity, r.weekCount)),
     card('By events', events
       ? [retentionTable('retention-events', r.byEvents, r.weekCount), note('Weeks before the first full week of events also show n/a.')]
-      : pending()),
+      : noEvents(m)),
     card('Accounts deleted', churn.total === 0
       ? empty('No accounts deleted yet.')
       : [
@@ -2395,7 +2667,7 @@ function viewRestaurants(m) {
         { label: 'From a scan', value: share(lfs.shareFromScan), sub: plural(lfs.fromScan, 'log', 'logs') },
         { label: 'The top pick', value: share(lfs.shareTopPickOfScanLogs), sub: `${int(lfs.topPick)} of the logs from a scan` },
       ])
-      : pending()),
+      : noEvents(m)),
   ];
 }
 

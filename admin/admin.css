@@ -269,8 +269,65 @@ button { font: inherit; }
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: 0.5rem 1rem;
+  gap: 0.5rem;
 }
+
+/* The switch and Builds stay together and Refresh keeps to the right: one line from a
+   390px phone up, Refresh on a line of its own below that */
+.top-filters { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; }
+
+.top-controls > .btn { margin-left: auto; }
+
+.builds-btn { gap: 0.375rem; }
+
+.builds-btn[aria-expanded='true'] { background: var(--sand-warm); }
+
+/* The Builds panel: a row of the header of its own, there only while it is open */
+.builds-panel {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  border: 1px solid var(--hairline);
+  border-radius: 10px;
+  background: var(--card);
+}
+
+.builds-panel > .seg { align-self: flex-start; }
+
+.builds-groups {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr));
+  gap: 0.75rem 1.5rem;
+}
+
+.builds-groups:empty { display: none; }
+
+.builds-group { min-width: 0; margin: 0; padding: 0; border: 0; }
+
+.builds-group legend { margin-bottom: 0.125rem; padding: 0; color: var(--sage); font-size: 0.8125rem; font-weight: 500; }
+
+/* the box lines up with the build's name, not the middle of its two lines */
+.pick.build-pick { align-items: flex-start; padding: 0.25rem 0; }
+
+.pick.build-pick input { margin-top: 0.125rem; }
+
+.build-text { display: flex; flex-direction: column; min-width: 0; }
+
+.build-name { display: flex; flex-wrap: wrap; align-items: center; gap: 0.125rem 0.5rem; font-weight: 500; }
+
+.build-name .chip { padding: 0 0.375rem; font-size: 0.6875rem; }
+
+.build-commit { color: var(--sage); font-weight: 400; }
+
+.build-meta { color: var(--sage); font-size: 0.8125rem; }
+
+/* "No events from these builds yet." and Show all builds, in a figure, a table cell or the Events view */
+.builds-empty { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem 1rem; }
+
+/* in a table row the button makes the row taller: its label centers on the line */
+.data tr:has(.builds-empty) > th { vertical-align: middle; }
 
 .views {
   position: sticky;
@@ -359,11 +416,16 @@ button { font: inherit; }
     padding: 0.75rem 1.5rem;
   }
 
-  .top-data { flex-wrap: nowrap; justify-content: flex-end; }
+  /* the data time takes a line of its own when the controls leave it no room */
+  .top-data { justify-content: flex-end; }
 
   .generated { flex: 0 1 auto; text-align: right; }
 
-  .top-controls { flex: none; flex-wrap: nowrap; }
+  .top-controls { flex: none; flex-wrap: nowrap; column-gap: 1rem; }
+
+  .top-filters { flex-wrap: nowrap; column-gap: 1rem; }
+
+  .builds-panel { grid-column: 2; justify-self: end; width: min(100%, 36rem); }
 
   .views {
     grid-column: 1;
