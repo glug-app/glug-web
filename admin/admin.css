@@ -7,6 +7,8 @@
   --card: #FFFDF8;     /* white-ish card on the bone page */
   --wine-red: #9B3D4B; /* the one chart accent */
   --alert: #8A2D1F;    /* the site's form-error red: overdue reports only */
+  --better: #2F6B3A;   /* a 7-day change in the good direction, as in the sheet */
+  --worse: #A85040;    /* a 7-day change in the bad direction, as in the sheet */
 }
 
 [hidden] { display: none !important; }
@@ -470,6 +472,11 @@ button { font: inherit; }
 
 .tile-basis { font-weight: 500; }
 
+/* Only the signed number of a 7-day change is coloured; the words stay muted */
+.change.is-better { color: var(--better); }
+
+.change.is-worse { color: var(--worse); }
+
 .kv {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
@@ -727,6 +734,187 @@ button { font: inherit; }
   .field-label { padding-top: 0.0625rem; }
 }
 
+/* ── Events ──────────────────────────────────────────────────────── */
+
+.events-live { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem 1rem; }
+
+.updated { color: var(--sage); font-size: 0.8125rem; }
+
+.events-window { display: flex; flex-direction: column; gap: 0.75rem; }
+
+/* The four presets wrap onto a second line on a phone */
+.seg-wrap { flex-wrap: wrap; align-self: flex-start; border-radius: 1.125rem; }
+
+.events-form,
+.events-filters { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 0.75rem 1rem; }
+
+.events-form .field,
+.events-filters .field { flex: 1 1 13rem; min-width: 0; max-width: 20rem; }
+
+.events-form .field > :first-child,
+.events-filters .field > :first-child { color: var(--sage); font-size: 0.8125rem; }
+
+.picker-btn {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  text-align: left;
+  cursor: pointer;
+}
+
+.picker-text { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.picker-mark { flex: none; color: var(--sage); }
+
+.picker-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  border: 1px solid var(--hairline);
+  border-radius: 8px;
+  background: var(--card);
+}
+
+.picker-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 12rem), 1fr));
+  gap: 0.125rem 1rem;
+}
+
+.pick {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 2rem;
+  font-size: 0.875rem;
+  overflow-wrap: anywhere;
+  cursor: pointer;
+}
+
+.pick input { flex: none; width: 1rem; height: 1rem; margin: 0; accent-color: var(--vine-olive); }
+
+.picker-foot { display: flex; flex-wrap: wrap; align-items: center; gap: 0.25rem 1rem; }
+
+.events-status { display: flex; flex-direction: column; gap: 0.5rem; }
+
+.events-status:empty { display: none; }
+
+.events-foot { display: grid; justify-items: start; gap: 0.5rem; }
+
+.events-foot > .events-status { justify-self: stretch; }
+
+/* The list sizes its own rows: one line per event when it is wide (below) */
+.events {
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  list-style: none;
+  border: 1px solid var(--hairline);
+  border-radius: 8px;
+  background: var(--card);
+  container-type: inline-size;
+}
+
+.events:empty { display: none; }
+
+.event + .event { border-top: 1px solid var(--hairline); }
+
+.ev-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.125rem 0.75rem;
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  border: 0;
+  background: none;
+  color: var(--ink);
+  font-size: 0.875rem;
+  line-height: 1.4;
+  text-align: left;
+  cursor: pointer;
+}
+
+.ev-row:hover,
+.ev-row[aria-expanded='true'] { background: var(--bone); }
+
+.ev-row:focus-visible { outline-offset: -2px; }
+
+.ev-time { grid-column: 2; grid-row: 1; color: var(--sage); white-space: nowrap; }
+
+.ev-name { grid-column: 1; grid-row: 1; min-width: 0; font-weight: 600; overflow-wrap: anywhere; }
+
+.ev-meta,
+.ev-props { display: flex; flex-wrap: wrap; grid-column: 1 / -1; gap: 0 0.75rem; min-width: 0; }
+
+.ev-meta { color: var(--sage); }
+
+.ev-who { display: inline-flex; align-items: center; gap: 0.375rem; min-width: 0; max-width: 100%; color: var(--ink); }
+
+.ev-person { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.ev-who .chip { flex: none; padding: 0 0.375rem; font-size: 0.6875rem; }
+
+.ev-screen,
+.ev-device { min-width: 0; overflow-wrap: anywhere; }
+
+.ev-prop { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.ev-key { color: var(--sage); }
+
+.ev-late { grid-column: 1 / -1; color: var(--sage); font-size: 0.8125rem; }
+
+.ev-more {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.125rem 0.75rem 0.75rem;
+  background: var(--bone);
+  font-size: 0.8125rem;
+}
+
+.ev-list { display: grid; gap: 0.125rem; margin: 0; padding: 0; list-style: none; overflow-wrap: anywhere; }
+
+.ev-more > * + * { padding-top: 0.5rem; border-top: 1px solid var(--hairline); }
+
+/* A row that arrives after the list is drawn shows itself for a moment */
+.event.is-new > .ev-row { animation: ev-arrived 2.4s ease-out; }
+
+@keyframes ev-arrived {
+  from { background-color: var(--sand); }
+}
+
+@container (min-width: 60rem) {
+  .ev-row {
+    grid-template-columns: 6.5rem minmax(0, 8rem) minmax(0, 10rem) minmax(0, 8rem) 6.5rem minmax(0, 1fr);
+    column-gap: 0.75rem;
+  }
+
+  .ev-time { grid-column: 1; }
+
+  .ev-meta { display: contents; }
+
+  .ev-who { grid-column: 2; grid-row: 1; }
+
+  .ev-name { grid-column: 3; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+  .ev-screen { grid-column: 4; grid-row: 1; }
+
+  .ev-device { grid-column: 5; grid-row: 1; }
+
+  .ev-screen,
+  .ev-device { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+  .ev-props { display: block; grid-column: 6; grid-row: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+  .ev-prop { display: inline; }
+
+  .ev-prop + .ev-prop { margin-left: 0.75rem; }
+
+  .ev-late { grid-column: 1 / span 2; grid-row: 2; }
+}
+
 /* ── Feedback ────────────────────────────────────────────────────── */
 
 .links { display: grid; gap: 1.25rem; margin: 0; padding: 0; list-style: none; }
@@ -749,4 +937,6 @@ button { font: inherit; }
   .main,
   .switch-track,
   .switch-knob { transition: none; }
+
+  .event.is-new > .ev-row { animation: none; }
 }

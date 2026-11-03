@@ -11,7 +11,7 @@
 // sheet part's percentages are 0 to 100 (66.7). Both show as "66.7%".
 //
 // SAFETY: every string from the API (names, report details, comment bodies,
-// venue and wine names, typed food pairings) reaches the page through el()
+// venue and wine names, typed food pairings, event props) reaches the page through el()
 // and add() below, which only ever create elements and text nodes. Nothing in
 // this file assigns innerHTML or parses HTML. Chart labels are canvas data.
 //
@@ -35,6 +35,7 @@ const VIEWS = [
   { id: 'investors', label: 'Investors', data: 'metrics', render: viewInvestors },
   { id: 'growth', label: 'Growth', data: 'metrics', render: viewGrowth },
   { id: 'engagement', label: 'Engagement', data: 'metrics', render: viewEngagement },
+  { id: 'events', label: 'Events', data: 'events', render: viewEvents },
   { id: 'retention', label: 'Retention', data: 'metrics', render: viewRetention },
   { id: 'restaurants', label: 'Restaurants', data: 'metrics', render: viewRestaurants },
   { id: 'scans', label: 'Scans', data: 'metrics', render: viewScans },
@@ -56,6 +57,7 @@ const state = {
   reportsError: null,
   reportsNotice: null,
   reportsFilter: 'open',
+  events: eventsChoices(), // the Events view's mode and filters, kept while signed in
   view: DEFAULT_VIEW,
   ranges: new Map(), // chart id -> '7' | '30' | '90' | 'all', kept across refreshes
   tables: new Map(), // table id -> { key, dir, query }, kept across refreshes
@@ -273,6 +275,7 @@ let fixture = null;
 /** Answers like the function, from admin/fixture.json, so every view and the
  *  review buttons can be checked without a login. */
 async function fixtureCall(body) {
+  console.debug('[fixture]', JSON.stringify(body)); // what the function would have been sent
   if (!fixture) {
     const res = await fetch(new URL('./fixture.json', import.meta.url), { cache: 'no-store' });
     if (!res.ok) throw new ApiError(res.status, 'fixture_missing');
@@ -304,9 +307,94 @@ async function fixtureCall(body) {
       row.overdue = !body.reviewed && row.age_hours > 24;
       return { report: copy(row) };
     }
+    case 'events':
+      return fixtureEvents(body);
     default:
       throw new ApiError(400, 'unknown_action');
   }
+}
+
+// The events action over fixture.events. `rows` are in the table at load; each
+// live poll (a call with after_id) lets the next batch of `later` arrive, one of
+// them holding a row whose id is lower than ids already shown (the late commit
+// that section 6.2 polls with an overlap for). Every time moves by whole seconds
+// so the newest row arrived at load. A query the function would refuse, and a
+// cursor this fixture did not hand out, are a 400 like the function's.
+let fixtureEventRows = null;
+let fixtureLater = [];
+const fixtureCursors = new Set();
+
+function fixtureEvents(b) {
+  if (!fixtureEventRows) {
+    const shift = Math.round((Date.now() - Math.max(...fixture.events.rows.map((r) => eventMs(r.received_at)))) / 1000) * 1000;
+    const move = (r) => ({ ...r, occurred_at: shiftStamp(r.occurred_at, shift), received_at: shiftStamp(r.received_at, shift) });
+    fixtureEventRows = fixture.events.rows.map(move);
+    fixtureLater = fixture.events.later.map((batch) => batch.map(move));
+  }
+  if (!fixtureEventsQueryOk(b)) throw new ApiError(400, 'invalid_events_query');
+  if (b.mode === 'live' && b.after_id !== undefined && fixtureLater.length > 0) fixtureEventRows.push(...fixtureLater.shift());
+
+  const micros = (s) => eventMs(s) * 1000 + Number((/\.\d{3}(\d*)/.exec(s)?.[1] ?? '').padEnd(3, '0'));
+  let rows = fixtureEventRows.filter((r) => (b.include_test === true || !r.user.test) &&
+    (!b.names || b.names.includes(r.name)) && (!b.user_id || r.user.id === b.user_id.toLowerCase()));
+  let next = null;
+  if (b.mode === 'live') {
+    rows = rows.filter((r) => b.after_id === undefined || r.id > b.after_id)
+      .sort((x, y) => y.id - x.id)
+      .slice(0, b.after_id === undefined ? 100 : 200);
+  } else {
+    const from = Date.parse(b.from) * 1000;
+    const to = Date.parse(b.to) * 1000;
+    const c = b.before && { at: micros(b.before.occurred_at), id: b.before.id };
+    rows = rows.filter((r) => {
+      const at = micros(r.occurred_at);
+      return at >= from && at < to && (!c || at < c.at || (at === c.at && r.id < c.id));
+    }).sort((x, y) => micros(y.occurred_at) - micros(x.occurred_at) || y.id - x.id);
+    if (rows.length > 200) {
+      rows = rows.slice(0, 200);
+      next = { occurred_at: rows[199].occurred_at, id: rows[199].id };
+      fixtureCursors.add(`${next.occurred_at}|${next.id}`);
+    }
+  }
+  const since = (Date.now() - 30 * DAY_MS) * 1000;
+  const recent = fixtureEventRows.filter((r) => micros(r.occurred_at) >= since);
+  const people = new Map();
+  for (const r of recent) if (b.include_test === true || !r.user.test) people.set(r.user.id, r.user);
+  return structuredClone({
+    rows,
+    next,
+    latest_id: rows.length > 0 ? Math.max(...rows.map((r) => r.id)) : null,
+    names: [...new Set(recent.map((r) => r.name))].sort(),
+    people: [...people.values()].sort((x, y) => (x.display_name === null) - (y.display_name === null) ||
+      (x.display_name ?? '').localeCompare(y.display_name ?? '', 'en', { sensitivity: 'base' }) || (x.id < y.id ? -1 : 1)),
+  });
+}
+
+/** What events.ts parseEventsQuery refuses, near enough to catch a bad request here. */
+function fixtureEventsQueryOk(b) {
+  const NAME = /^[a-z][a-z0-9]*(_[a-z0-9]+)*$/;
+  const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  const time = (v, digits) => typeof v === 'string' && Number.isFinite(eventMs(v)) &&
+    new RegExp(`^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}(:\\d{2}(\\.\\d{1,${digits}})?)?(Z|[+-]\\d{2}:\\d{2})$`).test(v);
+  const count = (v) => Number.isSafeInteger(v) && v >= 0;
+  if (b.names !== undefined && !(Array.isArray(b.names) && b.names.length >= 1 && b.names.length <= EVENTS_MAX_NAMES &&
+    b.names.every((n) => typeof n === 'string' && n.length <= 64 && NAME.test(n)))) return false;
+  if (b.user_id !== undefined && !(typeof b.user_id === 'string' && UUID.test(b.user_id))) return false;
+  if (b.include_test !== undefined && typeof b.include_test !== 'boolean') return false;
+  if (b.mode === 'live') {
+    return b.from === undefined && b.to === undefined && b.before === undefined && (b.after_id === undefined || count(b.after_id));
+  }
+  if (b.mode !== 'window' || b.after_id !== undefined || !time(b.from, 3) || !time(b.to, 3)) return false;
+  const span = Date.parse(b.to) - Date.parse(b.from);
+  if (!(span > 0) || span > EVENTS_MAX_DAYS * DAY_MS) return false;
+  return b.before === undefined || (typeof b.before === 'object' && b.before !== null && Object.keys(b.before).length === 2 &&
+    time(b.before.occurred_at, 6) && count(b.before.id) && fixtureCursors.has(`${b.before.occurred_at}|${b.before.id}`));
+}
+
+/** A fixture timestamp ("...T21:14:09.482123+00:00") moved by whole seconds, its fraction and zone kept as written. */
+function shiftStamp(s, ms) {
+  const head = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/.exec(s)?.[0];
+  return head ? new Date(Date.parse(`${head}Z`) + ms).toISOString().slice(0, 19) + s.slice(19) : s;
 }
 
 // ── Signing in and out ──────────────────────────────────────────────────────
@@ -337,7 +425,9 @@ function resetData() {
   Object.assign(state, {
     metrics: null, metricsBusy: false, metricsError: null,
     reports: null, reportsBusy: false, reportsError: null, reportsNotice: null,
+    events: eventsChoices(),
   });
+  Object.assign(pickers, { names: [], people: [], namesKey: '', peopleKey: '', known: new Map() });
   metricsSeq += 1;
   reportsSeq += 1;
 }
@@ -582,12 +672,14 @@ function refresh() {
 function toggleTest() {
   state.includeTest = !state.includeTest;
   loadMetrics();
+  restartEvents(); // only when the Events view is open
 }
 
 // ── The signed-in page: header, nav, main ───────────────────────────────────
 
 function teardown() {
   destroyCharts();
+  stopEvents();
   shell = {};
   clear(root);
 }
@@ -676,6 +768,7 @@ function updateChrome() {
 function renderView() {
   if (!shell.main) return;
   destroyCharts();
+  stopEvents();
   shell.reportsSummary = null;
   const view = currentView();
   const body = [el('h1', { class: 'view-title' }, view.label)];
@@ -696,6 +789,7 @@ function renderView() {
   clear(shell.main);
   add(shell.main, body);
   mountCharts();
+  if (view.id === 'events') startEvents();
   updateChrome();
 }
 
@@ -1333,14 +1427,23 @@ async function review(node, rep, reviewed, button, error) {
 const NEW_IN_7_DAYS = new Set(['totalUsers', 'onboarded', 'logsTotal', 'menuScans', 'bottleScans', 'wantToTry', 'catalogSize', 'mintsPendingReview']);
 const VS_PRIOR_7_DAYS = new Set(['active7d', 'logs7d', 'menuRows30d']);
 
+/** A tile's `better` ("up" or "down", ADMIN_DASHBOARD.md 6.1a) says which way its
+ *  7-day change is good news. Zero, no value or no `better` stays muted. */
+function changeTone(t) {
+  if (!isNum(t.change7d) || t.change7d === 0 || (t.better !== 'up' && t.better !== 'down')) return null;
+  return (t.change7d > 0) === (t.better === 'up') ? 'is-better' : 'is-worse';
+}
+
 function overviewTile(t) {
   const isPct = /Pct30d$/.test(t.key);
+  // only the signed number takes the colour; the sign stays, so colour is never the only signal
+  const change = isNum(t.change7d) && el('span', { class: cls('change', changeTone(t)) }, signed(t.change7d, isPct ? 1 : 0));
   let sub;
-  if (!isNum(t.change7d)) sub = t.key === 'active30d' ? null : `7-day change: ${NA}`;
-  else if (isPct) sub = `${signed(t.change7d, 1)} points against the 7 days before`;
-  else if (NEW_IN_7_DAYS.has(t.key)) sub = `${signed(t.change7d)} in the last 7 days`;
-  else if (VS_PRIOR_7_DAYS.has(t.key)) sub = `${signed(t.change7d)} against the 7 days before`;
-  else sub = `7-day change: ${signed(t.change7d)}`;
+  if (!change) sub = t.key === 'active30d' ? null : `7-day change: ${NA}`;
+  else if (isPct) sub = [change, ' points against the 7 days before'];
+  else if (NEW_IN_7_DAYS.has(t.key)) sub = [change, ' in the last 7 days'];
+  else if (VS_PRIOR_7_DAYS.has(t.key)) sub = [change, ' against the 7 days before'];
+  else sub = ['7-day change: ', change];
   return { label: t.label, value: isPct ? pct(t.value) : int(t.value), sub };
 }
 
@@ -1585,6 +1688,574 @@ function viewEngagement(m) {
               note(`${plural(pf.appVersions.users, 'person', 'people')} used the app in the window.`),
             ]
             : pending()))),
+  ];
+}
+
+// ── Events ──────────────────────────────────────────────────────────────────
+//
+// The app's raw events (ADMIN_DASHBOARD.md section 6.2). Live asks every 5 s,
+// while this view is open and the tab is visible, for the ids above the highest
+// one shown less 100: an id is taken when an insert runs, not when it commits,
+// so a row can land behind rows already shown. Rows merge by id (the same id is
+// the same row) into a list kept newest id first. Time window pages back by
+// occurred_at and sends the server's cursor back exactly as it came.
+
+const EVENTS_POLL_MS = 5000;
+const EVENTS_OVERLAP = 100;
+const EVENTS_KEEP = 500;
+const EVENTS_MAX_NAMES = 30;
+const EVENTS_MAX_DAYS = 90;
+const DAY_MS = 86400000;
+const PRESETS = [
+  ['15m', 'Last 15 minutes', 15 * 60000],
+  ['1h', 'Last hour', 3600000],
+  ['24h', 'Last 24 hours', DAY_MS],
+  ['7d', 'Last 7 days', 7 * DAY_MS],
+];
+const PLATFORMS = { ios: 'iOS', android: 'Android', web: 'Web' };
+
+let eventsRun = 0; // bumped by every restart and when the view closes: an older answer is dropped
+let feed = null; // the rows on screen and where their paging stands
+let evUi = null; // the Events view's nodes while it is open
+let pollTimer = null;
+let tickTimer = null;
+const pickers = { names: [], people: [], namesKey: '', peopleKey: '', known: new Map() }; // from the last answer
+
+/** The Events view's choices when nothing is picked yet. */
+function eventsChoices() {
+  return { mode: 'live', names: [], userId: '', preset: '24h', from: '', to: '', paused: false };
+}
+
+const nyParts = new Intl.DateTimeFormat('en-US', {
+  timeZone: TZ, hourCycle: 'h23', year: 'numeric', month: '2-digit', day: '2-digit',
+  hour: '2-digit', minute: '2-digit', second: '2-digit',
+});
+
+/** An instant's New York wall clock: { year, month, day, hour, minute, second } as digits. */
+function nyClock(t) {
+  const out = {};
+  for (const { type, value } of nyParts.formatToParts(new Date(t))) out[type] = value;
+  return out;
+}
+
+/** A server timestamp as epoch ms. Postgres writes up to 6 fractional digits;
+ *  they are cut to 3 first, the form every browser's Date parses. */
+function eventMs(s) {
+  return typeof s === 'string' ? Date.parse(s.replace(/\.(\d+)/, (_, d) => `.${d.slice(0, 3).padEnd(3, '0')}`)) : NaN;
+}
+
+/** HH:MM:SS in New York, with the date when that is not today. */
+function eventClock(t) {
+  const p = nyClock(t);
+  const now = nyClock(Date.now());
+  const time = `${p.hour}:${p.minute}:${p.second}`;
+  if (p.year === now.year && p.month === now.month && p.day === now.day) return time;
+  const date = `${MONTHS[Number(p.month) - 1]} ${Number(p.day)}`;
+  return p.year === now.year ? `${date}, ${time}` : `${date}, ${p.year}, ${time}`;
+}
+
+/** An instant as a datetime-local value in New York time: "2026-11-03T14:30". */
+function nyInput(t) {
+  const p = nyClock(t);
+  return `${p.year}-${p.month}-${p.day}T${p.hour}:${p.minute}`;
+}
+
+/** A datetime-local value read as New York time, as epoch ms (NaN when it is not one). */
+function fromNyInput(value) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/.exec(value);
+  if (!m) return NaN;
+  const wall = Date.UTC(Number(m[1]), Number(m[2]) - 1, Number(m[3]), Number(m[4]), Number(m[5]));
+  const offset = (t) => {
+    const p = nyClock(t);
+    const asUtc = Date.UTC(Number(p.year), Number(p.month) - 1, Number(p.day), Number(p.hour), Number(p.minute), Number(p.second));
+    return asUtc - Math.floor(t / 1000) * 1000;
+  };
+  return wall - offset(wall - offset(wall)); // the second pass settles the hours around a clock change
+}
+
+/** "just now", "3 s ago", "2 min ago", "1 hour ago". */
+function sinceText(ms) {
+  const s = Math.floor(ms / 1000);
+  if (s < 1) return 'just now';
+  if (s < 60) return `${s} s ago`;
+  const m = Math.floor(s / 60);
+  if (m < 60) return `${m} min ago`;
+  const h = Math.floor(m / 60);
+  return `${h} ${h === 1 ? 'hour' : 'hours'} ago`;
+}
+
+/** How late an event arrived: "3 min", "2 hours", "3 days". */
+function lateText(seconds) {
+  if (seconds < 3600) return `${Math.floor(seconds / 60)} min`;
+  if (seconds < 48 * 3600) {
+    const h = Math.floor(seconds / 3600);
+    return `${h} ${h === 1 ? 'hour' : 'hours'}`;
+  }
+  return `${Math.floor(seconds / 86400)} days`;
+}
+
+function personName(p) {
+  return typeof p?.display_name === 'string' && p.display_name.trim() ? p.display_name : 'No name';
+}
+
+/** props as stored: an object's keys, or any other value whole, under "props". */
+function propEntries(props) {
+  if (props === null || props === undefined) return [];
+  if (typeof props === 'object' && !Array.isArray(props)) return Object.entries(props);
+  return [['props', props]];
+}
+
+/** A prop value as text: a string as it is, anything else as JSON. */
+function propText(v) {
+  return typeof v === 'string' ? v : JSON.stringify(v) ?? NA;
+}
+
+const isEventRow = (r) => r !== null && typeof r === 'object' && Number.isSafeInteger(r.id);
+
+function viewEvents() {
+  const f = state.events;
+  const ui = {};
+  f.paused = false; // the mode and filters stay when the view opens again; a pause does not
+
+  const mode = seg('Events to show', [['live', 'Live'], ['window', 'Time window']], f.mode, (m) => {
+    if (m === f.mode) return;
+    f.mode = m;
+    ui.live.hidden = m !== 'live';
+    ui.window.hidden = m !== 'window';
+    restartEvents();
+  });
+  ui.pause = el('button', { class: 'btn', type: 'button', onclick: togglePause }, f.paused ? 'Resume' : 'Pause');
+  ui.updated = el('span', { class: 'updated' });
+  ui.live = el('div', { class: 'events-live', hidden: f.mode !== 'live' }, ui.pause, ui.updated);
+
+  ui.presets = seg('Time window', PRESETS.map(([key, label]) => [key, label]), f.preset, (key) => {
+    f.preset = key;
+    ui.formMsg.textContent = '';
+    restartEvents();
+  });
+  ui.presets.classList.add('seg-wrap');
+  ui.from = el('input', { class: 'input', id: 'events-from', type: 'datetime-local', value: f.from });
+  ui.to = el('input', { class: 'input', id: 'events-to', type: 'datetime-local', value: f.to });
+  ui.formMsg = el('p', { class: 'form-msg is-error', role: 'alert' });
+  const form = el('form', { class: 'events-form', novalidate: true },
+    el('div', { class: 'field' }, el('label', { for: 'events-from' }, 'From'), ui.from),
+    el('div', { class: 'field' }, el('label', { for: 'events-to' }, 'To'), ui.to),
+    el('button', { class: 'btn btn-primary', type: 'submit' }, 'Show'));
+  form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    pickWindow();
+  });
+  ui.window = el('div', { class: 'events-window', hidden: f.mode !== 'window' },
+    ui.presets, form, el('p', { class: 'hint' }, `New York time. At most ${EVENTS_MAX_DAYS} days.`), ui.formMsg);
+
+  ui.namesText = el('span', { class: 'picker-text' });
+  ui.namesButton = el('button', {
+    class: 'input picker-btn', id: 'events-names-button', type: 'button',
+    'aria-expanded': 'false', 'aria-controls': 'events-names', 'aria-labelledby': 'events-names-label events-names-button',
+  }, ui.namesText, el('span', { class: 'picker-mark', 'aria-hidden': 'true' }, '▾'));
+  ui.namesButton.addEventListener('click', () => {
+    const open = ui.namesPanel.hidden;
+    ui.namesPanel.hidden = !open;
+    ui.namesButton.setAttribute('aria-expanded', String(open));
+  });
+  ui.namesList = el('div', { class: 'picker-list' });
+  ui.namesNone = empty('No event names in the last 30 days.');
+  ui.namesFull = el('span', { class: 'hint' }, `At most ${EVENTS_MAX_NAMES} at a time.`);
+  ui.namesClear = el('button', {
+    class: 'link-btn', type: 'button',
+    onclick: () => {
+      f.names = [];
+      updateNamePicker();
+      restartEvents();
+      ui.namesList.querySelector('input')?.focus();
+    },
+  }, 'Clear');
+  ui.namesPanel = el('div', { class: 'picker-panel', id: 'events-names', hidden: true },
+    ui.namesNone, ui.namesList, el('div', { class: 'picker-foot' }, ui.namesFull, ui.namesClear));
+  ui.person = el('select', { class: 'input', id: 'events-person' });
+  ui.person.addEventListener('change', () => {
+    f.userId = ui.person.value;
+    restartEvents();
+  });
+  const filters = el('div', { class: 'events-filters' },
+    el('div', { class: 'field' }, el('span', { id: 'events-names-label' }, 'Event names'), ui.namesButton),
+    el('div', { class: 'field' }, el('label', { for: 'events-person' }, 'Person'), ui.person));
+
+  ui.status = el('div', { class: 'events-status' });
+  ui.list = el('ol', { class: 'events', 'aria-label': 'Events' });
+  ui.olderMsg = el('div', { class: 'events-status' });
+  ui.more = el('button', { class: 'btn', type: 'button', onclick: () => loadWindow(true) }, 'Load older');
+  ui.foot = el('div', { class: 'events-foot', hidden: true }, ui.olderMsg, ui.more);
+
+  evUi = ui;
+  drawNamePicker();
+  drawPersonPicker();
+  return [
+    intro('Phones send events in batches, so a new event can take about 15 seconds to show.'),
+    el('div', { class: 'view-tools' }, mode, ui.live),
+    ui.window,
+    filters,
+    ui.namesPanel,
+    ui.status,
+    ui.list,
+    ui.foot,
+  ];
+}
+
+/** The filters every events call carries. No names key when none is picked: [] is a 400. */
+function eventsFilters() {
+  const f = state.events;
+  const out = {};
+  if (f.names.length > 0) out.names = [...f.names];
+  if (f.userId) out.user_id = f.userId;
+  out.include_test = state.includeTest;
+  return out;
+}
+
+function startEvents() {
+  tickTimer = setInterval(tick, 1000);
+  restartEvents();
+}
+
+/** Closes the feed: no more polls, and an answer still on its way is dropped. */
+function stopEvents() {
+  eventsRun += 1;
+  clearTimeout(pollTimer);
+  clearInterval(tickTimer);
+  pollTimer = null;
+  tickTimer = null;
+  evUi = null;
+  feed = null;
+}
+
+/** A new mode or filter: the list starts again from nothing. */
+function restartEvents() {
+  if (!evUi) return;
+  eventsRun += 1;
+  clearTimeout(pollTimer);
+  pollTimer = null;
+  feed = {
+    ids: [], byId: new Map(), loaded: false, busy: false, error: null, errorOlder: false,
+    updatedAt: null, next: null, from: null, to: null, dropped: false, statusKey: null,
+  };
+  clear(evUi.list);
+  drawStatus();
+  tick();
+  if (state.events.mode === 'live') poll(true);
+  else loadWindow(false);
+}
+
+function livePolling() {
+  return evUi !== null && state.events.mode === 'live' && !state.events.paused && !document.hidden;
+}
+
+function schedulePoll() {
+  clearTimeout(pollTimer);
+  pollTimer = livePolling() ? setTimeout(poll, EVENTS_POLL_MS) : null;
+}
+
+/** One live call. `force` answers a person's own click even while paused. */
+async function poll(force = false) {
+  clearTimeout(pollTimer);
+  pollTimer = null;
+  if (!evUi || state.events.mode !== 'live' || (!force && !livePolling())) return;
+  const run = eventsRun;
+  const target = feed;
+  const body = { action: 'events', mode: 'live' };
+  // the overlap brings back a row that committed after rows with higher ids were shown
+  if (target.ids.length > 0) body.after_id = Math.max(0, target.ids[0] - EVENTS_OVERLAP);
+  Object.assign(body, eventsFilters());
+  try {
+    const answer = await call(body);
+    if (run !== eventsRun) return;
+    syncPickers(answer);
+    mergeRows(Array.isArray(answer.rows) ? answer.rows : [], target.loaded);
+    target.loaded = true;
+    target.error = null;
+    target.updatedAt = Date.now();
+  } catch (e) {
+    if (e instanceof SignedOut || run !== eventsRun) return;
+    if (e.status === 403) {
+      renderNotAdmin();
+      return;
+    }
+    target.error = e;
+  }
+  drawStatus();
+  tick();
+  schedulePoll();
+}
+
+function togglePause() {
+  const f = state.events;
+  f.paused = !f.paused;
+  evUi.pause.textContent = f.paused ? 'Resume' : 'Pause';
+  if (f.paused) {
+    clearTimeout(pollTimer);
+    pollTimer = null;
+  } else {
+    poll(true);
+  }
+}
+
+/** Live keeps the newest id first; a row that committed late takes its place by id. */
+function mergeRows(rows, isNew) {
+  const ids = feed.ids;
+  for (const r of rows) {
+    if (!isEventRow(r) || feed.byId.has(r.id)) continue;
+    let lo = 0;
+    let hi = ids.length;
+    while (lo < hi) {
+      const mid = (lo + hi) >> 1;
+      if (ids[mid] > r.id) lo = mid + 1;
+      else hi = mid;
+    }
+    const node = eventItem(r, isNew);
+    evUi.list.insertBefore(node, lo < ids.length ? feed.byId.get(ids[lo]) : null);
+    ids.splice(lo, 0, r.id);
+    feed.byId.set(r.id, node);
+  }
+  while (ids.length > EVENTS_KEEP) {
+    const id = ids.pop();
+    feed.byId.get(id).remove();
+    feed.byId.delete(id);
+    feed.dropped = true;
+  }
+}
+
+/** The form's From and To, as New York times. Checked here, so a bad window never reaches the server. */
+function pickWindow() {
+  const ui = evUi;
+  const f = state.events;
+  const from = fromNyInput(ui.from.value);
+  const to = fromNyInput(ui.to.value);
+  let error = '';
+  if (!Number.isFinite(from) || !Number.isFinite(to)) error = 'Pick a From time and a To time.';
+  else if (from >= to) error = 'The From time must be before the To time.';
+  else if (to - from > EVENTS_MAX_DAYS * DAY_MS) error = `The window can be at most ${EVENTS_MAX_DAYS} days.`;
+  ui.formMsg.textContent = error;
+  if (error) return;
+  f.preset = null;
+  f.from = ui.from.value;
+  f.to = ui.to.value;
+  for (const button of ui.presets.children) button.setAttribute('aria-pressed', 'false');
+  restartEvents();
+}
+
+/** A page of the window, newest first: the first, or the next one back with the server's cursor. */
+async function loadWindow(older) {
+  const f = state.events;
+  const target = feed;
+  if (!older) {
+    let from;
+    let to;
+    if (f.preset) {
+      to = Date.now();
+      from = to - PRESETS.find(([key]) => key === f.preset)[2];
+      evUi.from.value = nyInput(from);
+      evUi.to.value = nyInput(to);
+    } else {
+      from = fromNyInput(f.from);
+      to = fromNyInput(f.to);
+    }
+    target.from = new Date(from).toISOString();
+    target.to = new Date(to).toISOString();
+  }
+  const run = eventsRun;
+  const body = { action: 'events', mode: 'window', from: target.from, to: target.to };
+  if (older) body.before = target.next; // exactly as it came: never reformatted
+  Object.assign(body, eventsFilters());
+  target.busy = true;
+  target.error = null;
+  drawStatus();
+  try {
+    const answer = await call(body);
+    if (run !== eventsRun) return;
+    syncPickers(answer);
+    for (const r of Array.isArray(answer.rows) ? answer.rows : []) {
+      if (!isEventRow(r) || target.byId.has(r.id)) continue;
+      const node = eventItem(r, false);
+      evUi.list.append(node);
+      target.ids.push(r.id);
+      target.byId.set(r.id, node);
+    }
+    target.next = answer.next ?? null;
+    target.loaded = true;
+  } catch (e) {
+    if (e instanceof SignedOut || run !== eventsRun) return;
+    if (e.status === 403) {
+      renderNotAdmin();
+      return;
+    }
+    target.error = e;
+    target.errorOlder = older;
+  }
+  target.busy = false;
+  drawStatus();
+}
+
+/** Loading, the empty and error states above the list, and Load older below it.
+ *  Redrawn only when they change, so an alert is not read out again on every poll. */
+function drawStatus() {
+  const ui = evUi;
+  if (!ui || !feed) return;
+  const f = state.events;
+  const live = f.mode === 'live';
+  const filtered = f.names.length > 0 || f.userId !== '';
+  const top = [];
+  if (feed.error && !feed.errorOlder) {
+    top.push(['error', feed.loaded && live
+      ? `The last update failed (${errorText(feed.error)}).`
+      : `The events did not load (${errorText(feed.error)}).`]);
+  } else if (!feed.loaded) {
+    top.push(['loading']);
+  }
+  if (feed.loaded && feed.ids.length === 0) {
+    top.push(['empty', live
+      ? (filtered ? 'No events match these filters yet.' : 'No events yet.')
+      : (filtered ? 'No events match these filters in this window.' : 'No events in this window.')]);
+  }
+  if (live && feed.dropped) top.push(['note', `Only the newest ${int(EVENTS_KEEP)} are kept on screen.`]);
+  const older = !live && feed.error && feed.errorOlder ? `The older events did not load (${errorText(feed.error)}).` : '';
+  const key = JSON.stringify([top, older]);
+  if (key !== feed.statusKey) {
+    feed.statusKey = key;
+    clear(ui.status);
+    add(ui.status, top.map(([kind, text]) => {
+      if (kind === 'error') return problem(text, live ? () => poll(true) : restartEvents);
+      if (kind === 'loading') return loading();
+      return kind === 'empty' ? empty(text) : note(text);
+    }));
+    clear(ui.olderMsg);
+    if (older) ui.olderMsg.append(problem(older, null));
+  }
+  ui.foot.hidden = live || (feed.next === null && !older);
+  ui.more.hidden = feed.next === null;
+  ui.more.disabled = feed.busy;
+  ui.more.textContent = feed.busy && feed.loaded ? 'Loading' : 'Load older';
+}
+
+/** "Updated 3 s ago", once a second while the view is open. */
+function tick() {
+  if (!evUi || !feed) return;
+  evUi.updated.textContent = feed.updatedAt === null ? '' : `Updated ${sinceText(Date.now() - feed.updatedAt)}`;
+}
+
+/** names and people come with every answer; the pickers are redrawn only when they change. */
+function syncPickers(answer) {
+  const names = Array.isArray(answer.names) ? answer.names.filter((n) => typeof n === 'string') : [];
+  const people = Array.isArray(answer.people) ? answer.people.filter((p) => typeof p?.id === 'string') : [];
+  for (const p of people) pickers.known.set(p.id, p);
+  const namesKey = JSON.stringify(names);
+  if (namesKey !== pickers.namesKey) {
+    pickers.namesKey = namesKey;
+    pickers.names = names;
+    drawNamePicker();
+  }
+  const peopleKey = JSON.stringify(people);
+  if (peopleKey !== pickers.peopleKey) {
+    pickers.peopleKey = peopleKey;
+    pickers.people = people;
+    drawPersonPicker();
+  }
+}
+
+/** The event names as checkboxes. A name picked earlier stays listed after it drops out of the 30 days. */
+function drawNamePicker() {
+  const ui = evUi;
+  if (!ui) return;
+  const f = state.events;
+  const focused = ui.namesList.contains(document.activeElement) ? document.activeElement.value : null;
+  clear(ui.namesList);
+  for (const name of [...new Set([...pickers.names, ...f.names])].sort()) {
+    const box = el('input', { type: 'checkbox', value: name });
+    box.addEventListener('change', () => {
+      f.names = box.checked ? [...f.names, name].sort() : f.names.filter((n) => n !== name);
+      updateNamePicker();
+      restartEvents();
+    });
+    ui.namesList.append(el('label', { class: 'pick' }, box, el('span', {}, name)));
+    if (name === focused) box.focus();
+  }
+  ui.namesNone.hidden = ui.namesList.childElementCount > 0;
+  updateNamePicker();
+}
+
+function updateNamePicker() {
+  const ui = evUi;
+  const picked = new Set(state.events.names);
+  const full = picked.size >= EVENTS_MAX_NAMES;
+  for (const box of ui.namesList.querySelectorAll('input')) {
+    box.checked = picked.has(box.value);
+    box.disabled = full && !box.checked;
+  }
+  ui.namesFull.hidden = !full;
+  ui.namesClear.hidden = picked.size === 0;
+  ui.namesText.textContent = picked.size === 0 ? 'All events' : [...picked].join(', ');
+}
+
+/** Everyone, then the people of the last 30 days. A person picked earlier stays listed. */
+function drawPersonPicker() {
+  const ui = evUi;
+  if (!ui) return;
+  const f = state.events;
+  const people = [...pickers.people];
+  if (f.userId && !people.some((p) => p.id === f.userId)) {
+    people.push(pickers.known.get(f.userId) ?? { id: f.userId, display_name: null, test: false });
+  }
+  const label = (p) => `${personName(p)}${p.test === true ? ' (test)' : ''}`;
+  const uses = new Map();
+  for (const p of people) uses.set(label(p), (uses.get(label(p)) ?? 0) + 1);
+  clear(ui.person);
+  add(ui.person, [
+    el('option', { value: '' }, 'Everyone'),
+    // two people with one name are told apart by the start of their id
+    people.map((p) => el('option', { value: p.id }, uses.get(label(p)) > 1 ? `${label(p)}, ${p.id.slice(0, 8)}` : label(p))),
+  ]);
+  ui.person.value = f.userId;
+}
+
+function eventItem(r, isNew) {
+  const at = eventMs(r.occurred_at);
+  const lateBy = (eventMs(r.received_at) - at) / 1000;
+  const props = propEntries(r.props);
+  const device = [PLATFORMS[r.platform] ?? r.platform, r.app_version].filter((s) => typeof s === 'string' && s !== '').join(' ');
+  const prop = ([k, v]) => el('span', { class: 'ev-prop' }, el('span', { class: 'ev-key' }, `${k}:`), ' ', propText(v));
+  const row = el('button', { class: 'ev-row', type: 'button', 'aria-expanded': 'false' },
+    el('span', { class: 'ev-time' }, Number.isFinite(at) ? el('time', { datetime: new Date(at).toISOString() }, eventClock(at)) : NA),
+    el('span', { class: 'ev-name' }, r.name),
+    el('span', { class: 'ev-meta' },
+      el('span', { class: 'ev-who' },
+        el('span', { class: 'ev-person' }, personName(r.user)),
+        r.user?.test === true && el('span', { class: 'chip' }, 'test')),
+      r.screen && el('span', { class: 'ev-screen' }, r.screen),
+      device && el('span', { class: 'ev-device' }, device)),
+    props.length > 0 && el('span', { class: 'ev-props' },
+      props.slice(0, 3).map(prop),
+      props.length > 3 && el('span', { class: 'ev-prop ev-key' }, `+${props.length - 3} more`)),
+    lateBy > 60 && el('span', { class: 'ev-late' }, `arrived ${lateText(lateBy)} late`));
+  const more = el('div', { class: 'ev-more', hidden: true });
+  row.addEventListener('click', () => {
+    const open = more.hidden;
+    if (open && !more.firstChild) add(more, eventDetail(r));
+    more.hidden = !open;
+    row.setAttribute('aria-expanded', String(open));
+  });
+  return el('li', { class: cls('event', isNew && 'is-new'), 'data-id': r.id }, row, more);
+}
+
+/** Every prop as key: value, then the session, build and OS. */
+function eventDetail(r) {
+  const props = propEntries(r.props);
+  const line = (key, value) => el('li', {}, el('span', { class: 'ev-key' }, `${key}:`), ' ', value);
+  return [
+    props.length > 0
+      ? el('ul', { class: 'ev-list' }, props.map(([k, v]) => line(k, propText(v))))
+      : el('p', { class: 'ev-key' }, 'No props.'),
+    el('ul', { class: 'ev-list' },
+      line('Session', r.session_id ?? NA),
+      line('Build', r.build ?? NA),
+      line('OS', r.os_version ?? NA)),
   ];
 }
 
@@ -1985,6 +2656,15 @@ async function boot() {
     if (!shell.main) return;
     route();
     window.scrollTo(0, 0);
+  });
+  // the live Events feed asks only while the tab is visible, and catches up on return
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+      clearTimeout(pollTimer);
+      pollTimer = null;
+    } else {
+      poll();
+    }
   });
 
   if (FIXTURE) {
