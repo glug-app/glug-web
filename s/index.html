@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <!-- The same policy vercel.json sends as a header for /s and /s/:id, minus
+       frame-ancestors, which a meta policy cannot carry. share.js is the one
+       script; no inline script, style or handler anywhere on this page. -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' https://txjfbiriyceabushptlp.supabase.co; connect-src https://txjfbiriyceabushptlp.supabase.co; base-uri 'none'; form-action 'none'">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>glug</title>
+  <meta name="description" content="Glug — knowing wine is just about knowing what you like. Scan a wine list, log what you drink, and get recommendations that match your taste.">
+  <meta name="robots" content="noindex">
+  <meta name="referrer" content="no-referrer">
+  <meta name="theme-color" content="#464B36">
+  <link rel="icon" href="/assets/favicon-32.png" type="image/png">
+  <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+  <link rel="preload" href="/assets/fonts/ysabeau-office-latin-600-normal.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="/assets/fonts/ysabeau-office-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="/styles.css">
+  <script src="/share.js" defer></script>
+</head>
+<body>
+  <main class="hero profile-link share-page" data-share-kind="scan">
+    <div class="hero-inner">
+      <img class="logo" src="/assets/glug-logo-white.png" alt="glug — a hand holding a glass of wine" width="956" height="711">
+      <!-- share.js replaces the placeholder line with the card or one sentence. -->
+      <div class="share-stage" id="share-stage" aria-live="polite" aria-busy="true">
+        <p class="tagline share-skeleton" aria-hidden="true"></p>
+        <noscript><h1 class="tagline">This page needs JavaScript.</h1></noscript>
+      </div>
+      <a class="store-cta" id="open-in-glug" hidden>Open in Glug</a>
+      <div class="get-app">
+        <a class="apple-badge" href="https://apps.apple.com/app/id6791446035"><img src="/assets/badges/app-store-badge-black.svg" alt="Download on the App Store" width="120" height="40"></a>
+        <a class="hero-link" href="/waitlist">On Android? Join the waitlist</a>
+      </div>
+    </div>
+  </main>
+</body>
+</html>

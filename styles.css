@@ -793,3 +793,346 @@ img { display: block; }
 @media (min-width: 1024px) {
   .home-hero-logo { height: 88px; }
 }
+
+/* ── Share pages (/l/<id>, /s/<id>) ──────────────────────────────── */
+
+/* The card a shared log or a scan's top picks shows on the olive hero: the
+   app's card in plain CSS (glug-app, docs/architecture/SHARE_LINKS_PLAN.md
+   section 10.3). The values here repeat the app's tokens (src/index.css,
+   VerdictChip.tsx, RareBadge.tsx, WineColorDot.tsx, MatchPill.tsx): bordeaux
+   for the match percent and nothing else, antique gold for Rare and nothing
+   else, the four wine-colour dots. They are Sadhana's; if the app's change,
+   this is a second place to change. */
+.share-page {
+  --bordeaux:    #6E2B3D; /* the match percent only */
+  --rare:        #8C6410; /* the Rare badge only */
+  --wine-red:    #9B3D4B;
+  --wine-white:  #CDB668;
+  --wine-rose:   #D7969C;
+  --wine-orange: #C58650;
+}
+
+/* The logo above the card: a small mark, not the hero's full-size one. The
+   card is what a visitor reads first and carries the logo itself; the
+   loading, private, gone and error states (one sentence) wear the same
+   56 px mark, centred by .hero-inner. */
+.share-page .logo {
+  width: auto;
+  height: 56px;
+}
+
+.share-stage {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Loading: a placeholder line where the sentence or the card will be. */
+.share-skeleton {
+  width: min(16rem, 70%);
+  height: 1.3em;
+  border-radius: 9999px;
+  background: rgba(251, 248, 240, 0.22);
+}
+
+/* The card: bone, 20 px radius, 20 px padding, 16 px between its bands. */
+.share-card {
+  width: min(100%, 342px);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 20px;
+  border-radius: 20px;
+  background: var(--bone);
+  color: var(--ink);
+  text-align: left;
+  font-size: 16px;
+  line-height: 22px;
+}
+
+.share-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.share-person {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+/* The sharer's photo, or their initial on sand. */
+.share-avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  overflow: hidden;
+  border-radius: 9999px;
+  background: var(--sand);
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.share-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 9999px;
+}
+
+.share-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 600;
+}
+
+.share-card-logo {
+  flex-shrink: 0;
+  width: 64px;
+  height: auto;
+}
+
+.share-main {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.share-lead {
+  font-size: 14px;
+  line-height: 20px;
+  color: var(--sage);
+}
+
+.share-body {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+/* The wine's name wraps and never truncates. */
+.share-wine {
+  flex: 1;
+  min-width: 0;
+  font-size: 18px;
+  line-height: 24px;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.share-vintage {
+  font-weight: 400;
+  color: var(--sage);
+}
+
+.share-badges {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+  flex-shrink: 0;
+  padding-top: 1px;
+}
+
+/* The rating word in a pill: the app's VerdictChip ladder, lightest to
+   darkest. The outline is the pill's own 1 px border, transparent on the
+   four filled ratings, so every pill is the same size. */
+.share-verdict {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 10px;
+  border: 1px solid transparent;
+  border-radius: 9999px;
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.share-verdict-poor   { background: var(--bone); border-color: var(--dust); color: var(--ink); }
+.share-verdict-fair   { background: var(--sand); color: var(--ink); }
+.share-verdict-good   { background: var(--dust); color: var(--ink); }
+.share-verdict-great  { background: var(--sage); color: var(--bone); }
+.share-verdict-superb { background: var(--vine-olive); color: var(--bone); }
+
+/* The Rare badge: a 9 px filled diamond and the word in capitals, antique
+   gold, letter-spaced. */
+.share-rare {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--rare);
+}
+
+.share-rare svg { flex-shrink: 0; }
+
+.share-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.share-place-line {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  font-size: 14px;
+  line-height: 20px;
+}
+
+.share-at {
+  flex-shrink: 0;
+  color: var(--sage);
+}
+
+/* The place as a pill: sand-warm, a 14 px map pin in vine-olive, the name
+   in semibold ink, 28 px tall; a long name truncates inside it. */
+.share-place {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  max-width: 100%;
+  height: 28px;
+  padding: 0 10px;
+  border-radius: 9999px;
+  background: var(--sand-warm);
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.share-pin {
+  flex-shrink: 0;
+  color: var(--vine-olive);
+}
+
+.share-place-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Read out, not shown (the place's neighbourhood). */
+.share-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* The colour and the date, at the right of the card's last line. */
+.share-meta {
+  margin-left: auto;
+  flex-shrink: 0;
+  white-space: nowrap;
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--sage);
+}
+
+/* The 7 px colour dot before the colour word, its centre half a capital
+   above the baseline (the app's WineColorDot on the cap line). */
+.share-dot {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  margin-right: 6px;
+  border-radius: 9999px;
+  transform: translateY(calc(3.5px - 0.329em));
+}
+
+.share-dot-red    { background: var(--wine-red); }
+.share-dot-white  { background: var(--wine-white); }
+.share-dot-rose   { background: var(--wine-rose); }
+.share-dot-orange { background: var(--wine-orange); }
+
+/* The scan card: the venue under "My top picks at", then up to three rows. */
+.share-venue {
+  font-size: 22px;
+  line-height: 28px;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.share-picks {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.share-pick {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 10px 0;
+  border-top: 1px solid var(--hairline);
+}
+
+.share-pick-text {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+}
+
+.share-pick-producer-line {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  min-width: 0;
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--sage);
+}
+
+.share-pick-producer {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.share-pick-name {
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+/* The match percent: an outlined bordeaux pill, the number alone. */
+.share-match {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  padding: 2px 10px;
+  border: 1px solid var(--bordeaux);
+  border-radius: 9999px;
+  background: transparent;
+  color: var(--bordeaux);
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 600;
+  letter-spacing: 0.025em;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}

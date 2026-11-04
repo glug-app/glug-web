@@ -8,12 +8,46 @@
     { "source": "/waitlist", "has": [{ "type": "query", "key": "error" }], "destination": "/waitlist/error", "permanent": false }
   ],
   "rewrites": [
-    { "source": "/u/:id", "destination": "/u" }
+    { "source": "/u/:id", "destination": "/u" },
+    { "source": "/l/:id", "destination": "/l" },
+    { "source": "/s/:id", "destination": "/s" }
   ],
   "headers": [
     { "source": "/.well-known/apple-app-site-association", "headers": [{ "key": "Content-Type", "value": "application/json" }] },
     { "source": "/.well-known/assetlinks.json", "headers": [{ "key": "Content-Type", "value": "application/json" }] },
     { "source": "/admin", "headers": [{ "key": "X-Robots-Tag", "value": "noindex" }] },
-    { "source": "/admin/:path*", "headers": [{ "key": "X-Robots-Tag", "value": "noindex" }] }
+    { "source": "/admin/:path*", "headers": [{ "key": "X-Robots-Tag", "value": "noindex" }] },
+    {
+      "source": "/l",
+      "headers": [
+        { "key": "X-Robots-Tag", "value": "noindex, nofollow" },
+        { "key": "Referrer-Policy", "value": "no-referrer" },
+        { "key": "Content-Security-Policy", "value": "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' https://txjfbiriyceabushptlp.supabase.co; connect-src https://txjfbiriyceabushptlp.supabase.co; base-uri 'none'; form-action 'none'; frame-ancestors 'none'" }
+      ]
+    },
+    {
+      "source": "/l/:id",
+      "headers": [
+        { "key": "X-Robots-Tag", "value": "noindex, nofollow" },
+        { "key": "Referrer-Policy", "value": "no-referrer" },
+        { "key": "Content-Security-Policy", "value": "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' https://txjfbiriyceabushptlp.supabase.co; connect-src https://txjfbiriyceabushptlp.supabase.co; base-uri 'none'; form-action 'none'; frame-ancestors 'none'" }
+      ]
+    },
+    {
+      "source": "/s",
+      "headers": [
+        { "key": "X-Robots-Tag", "value": "noindex, nofollow" },
+        { "key": "Referrer-Policy", "value": "no-referrer" },
+        { "key": "Content-Security-Policy", "value": "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' https://txjfbiriyceabushptlp.supabase.co; connect-src https://txjfbiriyceabushptlp.supabase.co; base-uri 'none'; form-action 'none'; frame-ancestors 'none'" }
+      ]
+    },
+    {
+      "source": "/s/:id",
+      "headers": [
+        { "key": "X-Robots-Tag", "value": "noindex, nofollow" },
+        { "key": "Referrer-Policy", "value": "no-referrer" },
+        { "key": "Content-Security-Policy", "value": "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' https://txjfbiriyceabushptlp.supabase.co; connect-src https://txjfbiriyceabushptlp.supabase.co; base-uri 'none'; form-action 'none'; frame-ancestors 'none'" }
+      ]
+    }
   ]
 }
