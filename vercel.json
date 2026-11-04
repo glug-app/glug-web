@@ -11,6 +11,8 @@
     { "source": "/u/:id", "destination": "/u" }
   ],
   "headers": [
+    { "source": "/.well-known/apple-app-site-association", "headers": [{ "key": "Content-Type", "value": "application/json" }] },
+    { "source": "/.well-known/assetlinks.json", "headers": [{ "key": "Content-Type", "value": "application/json" }] },
     { "source": "/admin", "headers": [{ "key": "X-Robots-Tag", "value": "noindex" }] },
     { "source": "/admin/:path*", "headers": [{ "key": "X-Robots-Tag", "value": "noindex" }] }
   ]

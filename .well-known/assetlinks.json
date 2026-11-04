@@ -1,0 +1,14 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.glug.app",
+      "sha256_cert_fingerprints": [
+        "25:A3:87:EB:CD:7A:0B:34:6A:48:4B:17:C9:59:2E:0D:62:F3:87:99:A8:9E:B8:30:97:CF:D6:47:D7:16:91:F6",
+        "5D:BB:57:54:EA:39:A5:15:A3:BA:BA:5C:BD:40:14:76:D6:F5:4A:68:10:7B:24:79:B7:2A:E5:97:42:CA:05:91",
+        "6F:EC:ED:94:97:45:9F:54:12:13:B2:D8:86:71:1B:85:6C:EA:ED:A1:96:1C:89:B1:B4:B9:62:C9:C8:94:7D:E4"
+      ]
+    }
+  }
+]

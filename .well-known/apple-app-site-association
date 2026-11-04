@@ -1,0 +1,14 @@
+{
+  "applinks": {
+    "details": [
+      {
+        "appIDs": ["JGMQH338G4.com.glug.app"],
+        "components": [
+          { "/": "/u/*", "comment": "A profile. Everything not listed stays in the browser." },
+          { "/": "/l/*", "comment": "A log." },
+          { "/": "/s/*", "comment": "A menu scan's shared top picks." }
+        ]
+      }
+    ]
+  }
+}
