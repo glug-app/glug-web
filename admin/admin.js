@@ -414,9 +414,10 @@ function fixtureBuildsOut(list) {
     : x));
 }
 
-/** metrics, with the builds list when the fixture has one. The event figures are emptied when
- *  no counted row (a v2 row of a user in scope) is in the choice: the figures stand for every
- *  build otherwise, a fixture's shortcut. */
+/** metrics, with the builds list and peopleVersions when the fixture has them. The event figures
+ *  are emptied when no counted row (a v2 row of a user in scope) is in the choice: the figures
+ *  stand for every build otherwise, a fixture's shortcut. peopleVersions leaves out the test
+ *  accounts unless include_test, ignores builds and moves its times like the event rows'. */
 function fixtureMetrics(b) {
   const inc = b.include_test === true;
   const m = structuredClone(inc ? fixture.metricsWithTest ?? fixture.metrics : fixture.metrics);
@@ -436,6 +437,11 @@ function fixtureMetrics(b) {
     a.restaurants.logsFromScan = null;
   }
   if (list) m.builds = fixtureBuildsOut(list);
+  if (Array.isArray(fixture.peopleVersions)) {
+    const move = (s) => (typeof s === 'string' ? shiftStamp(s, fixtureShift) : s);
+    m.peopleVersions = structuredClone(fixture.peopleVersions.filter((p) => inc || p?.is_test !== true))
+      .map((p) => (p !== null && typeof p === 'object' ? { ...p, last_seen: move(p.last_seen), last_active: move(p.last_active) } : p));
+  }
   return m;
 }
 
@@ -2942,6 +2948,82 @@ function viewTesters(m) {
         { key: 'profileColours', label: 'Colors picked', fmt: (v) => v || NA, cls: 'nowrap' },
       ],
     })),
+    card('What each person is on', peopleVersionsTable(m)),
+  ];
+}
+
+// metrics' peopleVersions (ADMIN_DASHBOARD.md 6.5): each person's platform, version, build
+// and channel from their newest app event, whatever the Builds choice, and the people with no
+// event too. The 1.0 builds send none, so their Last seen is last_active, their newest log or scan.
+
+const NO_EVENTS_HINT = '1.0 or not opened since updating';
+
+/** An instant's New York date, "2026-11-04". */
+function nyDate(t) {
+  const p = nyClock(t);
+  return `${p.year}-${p.month}-${p.day}`;
+}
+
+/** An instant as its New York day: "Today", "Yesterday", else "Nov 4" (with the year when it is not this one). */
+function dayWord(v) {
+  const t = eventMs(v);
+  if (!Number.isFinite(t)) return NA;
+  const today = nyDate(Date.now());
+  const d = nyDate(t);
+  if (d === today) return 'Today';
+  if (d === addDays(today, -1)) return 'Yesterday';
+  return seenDay(v);
+}
+
+/** "1.0.1 (34)": the version and the build number, or null when the event carried neither. */
+function versionText(p) {
+  const build = buildText(p.build);
+  return [buildText(p.app_version), build && `(${build})`].filter(Boolean).join(' ') || null;
+}
+
+function peopleVersionsTable(m) {
+  const list = m.peopleVersions;
+  if (!Array.isArray(list)) return empty('The server does not send this list yet.');
+  // the server leaves the test accounts out unless they are counted; this keeps to the answer's own scope
+  const rows = list.filter((p) => p !== null && typeof p === 'object' && (m.admin.scope.includeTest === true || p.is_test !== true));
+  const ran = (p) => typeof p.last_seen === 'string'; // last_seen is null only for a person with no events
+  const seenAt = (p) => (ran(p) ? p.last_seen : p.last_active);
+  return [
+    dataTable({
+      id: 'people-versions',
+      rows,
+      search: (p) => personName(p),
+      searchLabel: 'Search people',
+      emptyText: 'No people yet.',
+      columns: [
+        {
+          key: 'person', label: 'Person',
+          value: (p) => (typeof p.display_name === 'string' && p.display_name.trim() ? p.display_name : null),
+          cell: (p) => el('td', { class: 'wrap' }, personName(p), p.is_test === true && [' ', el('span', { class: 'chip' }, 'test')]),
+        },
+        {
+          key: 'platform', label: 'Platform',
+          value: (p) => (Object.hasOwn(PLATFORMS, p.platform) ? PLATFORMS[p.platform] : buildText(p.platform) || null),
+        },
+        {
+          key: 'version', label: 'Version',
+          value: (p) => (ran(p) ? versionText(p) : null),
+          cell: (p) => (ran(p)
+            ? el('td', { class: 'nowrap' }, versionText(p) ?? NA)
+            : el('td', { class: 'wrap' }, 'No events', el('span', { class: 'cell-sub' }, NO_EVENTS_HINT))),
+        },
+        { key: 'channel', label: 'Channel', value: (p) => buildText(p.channel) || null },
+        {
+          key: 'lastSeen', label: 'Last seen', cls: 'nowrap',
+          value: (p) => {
+            const t = eventMs(seenAt(p));
+            return Number.isFinite(t) ? t : null;
+          },
+          fmt: (v, p) => (seenAt(p) === null || seenAt(p) === undefined ? 'Never' : dayWord(seenAt(p))),
+        },
+      ],
+    }),
+    note("From each person's newest app event, whatever the Builds choice. For people with no events, Last seen is when they last logged or scanned."),
   ];
 }
 

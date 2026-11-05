@@ -647,6 +647,12 @@ button { font: inherit; }
 
 .data .nowrap { white-space: nowrap; }
 
+/* a muted line under a cell's value */
+.data .cell-sub { display: block; color: var(--sage); }
+
+/* the small chip that sits beside a name, as in the Events view */
+.data .chip { padding: 0 0.375rem; font-size: 0.6875rem; }
+
 .data td.pending-cell { color: var(--sage); text-align: left; white-space: normal; }
 
 .data .bar-cell { width: 45%; min-width: 9rem; }
