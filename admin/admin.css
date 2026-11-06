@@ -692,6 +692,110 @@ button { font: inherit; }
 
 .sort-mark.is-idle { color: var(--dust); }
 
+/* Rows that open in place (Testers): a tap anywhere on the row, or the button its first cell
+   holds, shows the detail row under it. Open and hovered rows take the Events view's bone. */
+.table-wrap.has-detail { container-type: inline-size; }
+
+.data tr.is-openable { cursor: pointer; }
+
+/* The name stays in view while the wide table scrolls sideways. The heads sit above the pinned
+   names when the box scrolls down (phones), the corner above both. */
+.has-detail .data thead th { z-index: 2; }
+
+.has-detail .data thead th:first-child { left: 0; z-index: 3; box-shadow: inset -1px 0 var(--hairline); }
+
+.has-detail .data tr.is-openable > :first-child {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  background: var(--card);
+  box-shadow: inset -1px 0 var(--hairline);
+}
+
+.data tr.is-openable:hover > *,
+.data tr.is-open > *,
+.has-detail .data tr.is-openable:hover > :first-child,
+.has-detail .data tr.is-open > :first-child,
+.data .row-detail > td { background: var(--bone); }
+
+.data tr.is-open > * { border-bottom-color: transparent; }
+
+/* the last row has no line under it while its detail row is closed, like any last row */
+.data tbody tr:has(+ .row-detail[hidden]:last-child) > * { border-bottom: 0; }
+
+.row-toggle {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font-weight: inherit;
+  line-height: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.row-mark {
+  flex: none;
+  width: 0.375rem;
+  height: 0.375rem;
+  border-right: 1.5px solid var(--sage);
+  border-bottom: 1.5px solid var(--sage);
+  transform: translateY(-0.1875rem) rotate(-45deg);
+}
+
+.row-toggle[aria-expanded='true'] .row-mark { transform: translateY(-0.3125rem) rotate(45deg); }
+
+.data .row-detail > td { padding: 0; }
+
+/* The detail keeps to the visible box while a wide table scrolls sideways: as wide as the
+   box (the container) and pinned to its left edge, the text lined up with the name's. */
+.row-detail-body {
+  position: sticky;
+  left: 0;
+  box-sizing: border-box;
+  width: 100cqi;
+  padding: 0 0.75rem 0.875rem 1.5rem;
+  white-space: normal;
+}
+
+.history-head { margin: 0 0 0.5rem; color: var(--sage); font-size: 0.8125rem; }
+
+.history {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  gap: 0.625rem 1rem;
+  max-width: 48rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.history-step { display: grid; grid-column: 1 / -1; grid-template-columns: subgrid; }
+
+.history-date { color: var(--sage); white-space: nowrap; }
+
+.history-body { min-width: 0; }
+
+.history-sentence { margin: 0; color: var(--ink); font-style: italic; overflow-wrap: anywhere; }
+
+.history-source,
+.history-note { margin: 0; color: var(--sage); font-size: 0.75rem; }
+
+.history-empty { margin: 0; color: var(--sage); }
+
+/* the current sentence: one line, cut with an ellipsis (the whole of it is in the opened row) */
+.data .sentence-line {
+  display: block;
+  max-width: 18rem;
+  overflow: hidden;
+  font-style: italic;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 /* Heatmaps: one hue, light to dark; the 2px gap between cells is the page's card colour */
 .heat {
   min-width: 100%;

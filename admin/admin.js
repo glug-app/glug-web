@@ -414,10 +414,11 @@ function fixtureBuildsOut(list) {
     : x));
 }
 
-/** metrics, with the builds list and peopleVersions when the fixture has them. The event figures
+/** metrics, with the builds list and people when the fixture has them. The event figures
  *  are emptied when no counted row (a v2 row of a user in scope) is in the choice: the figures
- *  stand for every build otherwise, a fixture's shortcut. peopleVersions leaves out the test
- *  accounts unless include_test, ignores builds and moves its times like the event rows'. */
+ *  stand for every build otherwise, a fixture's shortcut. people leaves out the test accounts
+ *  unless include_test, ignores builds and moves lastSeen and lastActiveAt like the event rows'
+ *  times; the sentence history keeps its own dates. */
 function fixtureMetrics(b) {
   const inc = b.include_test === true;
   const m = structuredClone(inc ? fixture.metricsWithTest ?? fixture.metrics : fixture.metrics);
@@ -437,10 +438,10 @@ function fixtureMetrics(b) {
     a.restaurants.logsFromScan = null;
   }
   if (list) m.builds = fixtureBuildsOut(list);
-  if (Array.isArray(fixture.peopleVersions)) {
+  if (Array.isArray(fixture.people)) {
     const move = (s) => (typeof s === 'string' ? shiftStamp(s, fixtureShift) : s);
-    m.peopleVersions = structuredClone(fixture.peopleVersions.filter((p) => inc || p?.is_test !== true))
-      .map((p) => (p !== null && typeof p === 'object' ? { ...p, last_seen: move(p.last_seen), last_active: move(p.last_active) } : p));
+    m.people = structuredClone(fixture.people.filter((p) => inc || p?.isTest !== true))
+      .map((p) => (p !== null && typeof p === 'object' ? { ...p, lastSeen: move(p.lastSeen), lastActiveAt: move(p.lastActiveAt) } : p));
   }
   return m;
 }
@@ -1185,15 +1186,20 @@ function staticTable(headers, rows) {
 /**
  * A data table. Over 10 rows it sorts by clicking a header and, on phones,
  * scrolls inside its own box. `search` (row -> text) adds a search box.
+ * `detail` (row -> nodes) lets every row open in place, with what it returns on a line of its
+ * own below: a tap anywhere on the row opens and closes it, and the first cell's content becomes
+ * the button that does so from the keyboard. `rowKey` (row -> string) keeps a row open through
+ * sorting, searching and a refresh.
  * Columns: { key, label, num?, bar?, wrap?, rowHeader?, value?(row), fmt?(v, row), cell?(row) }.
  */
-function dataTable({ id, columns, rows, search, searchLabel = 'Search', emptyText = 'Nothing yet.', tableClass = 'data' }) {
+function dataTable({ id, columns, rows, search, searchLabel = 'Search', emptyText = 'Nothing yet.', tableClass = 'data', detail, rowKey }) {
   if (!rows || rows.length === 0) return empty(emptyText);
   let st = state.tables.get(id);
   if (!st) {
-    st = { key: null, dir: 'desc', query: '' };
+    st = { key: null, dir: 'desc', query: '', open: new Set() };
     state.tables.set(id, st);
   }
+  const indexOf = new Map(rows.map((r, i) => [r, i]));
   const sortable = rows.length > 10;
   const valueOf = (col, row) => (col.value ? col.value(row) : row[col.key]);
   const maxes = new Map(columns.filter((c) => c.bar).map((c) => [c.key, Math.max(0, ...rows.map((r) => {
@@ -1249,7 +1255,11 @@ function dataTable({ id, columns, rows, search, searchLabel = 'Search', emptyTex
       if (col) list = sortRows(list, (r) => valueOf(col, r), st.dir);
     }
     clear(tbody);
-    for (const row of list) tbody.append(el('tr', {}, columns.map((col) => makeCell(col, row))));
+    for (const row of list) {
+      const cells = columns.map((col) => makeCell(col, row));
+      if (detail) tbody.append(...openable(row, cells));
+      else tbody.append(el('tr', {}, cells));
+    }
     if (list.length === 0) tbody.append(el('tr', {}, el('td', { class: 'empty', colspan: columns.length }, 'No matches.')));
     if (search) count.textContent = `${int(list.length)} of ${int(rows.length)}`;
     if (sortable) {
@@ -1262,6 +1272,36 @@ function dataTable({ id, columns, rows, search, searchLabel = 'Search', emptyTex
         mark.classList.toggle('is-idle', !on);
       });
     }
+  }
+
+  /** A row that opens: the row, then its detail row (hidden while closed, filled the first time it opens). */
+  function openable(row, cells) {
+    const i = indexOf.get(row);
+    const key = rowKey ? rowKey(row) : i;
+    const detailId = `${id}-detail-${i}`;
+    const toggle = el('button', { type: 'button', class: 'row-toggle', 'aria-expanded': 'false', 'aria-controls': detailId },
+      el('span', { class: 'row-mark', 'aria-hidden': 'true' }),
+      el('span', { class: 'row-toggle-text' }, [...cells[0].childNodes]));
+    cells[0].append(toggle);
+    const body = el('div', { class: 'row-detail-body' });
+    const more = el('tr', { class: 'row-detail', id: detailId, hidden: true }, el('td', { colspan: columns.length }, body));
+    const tr = el('tr', { class: 'is-openable' }, cells);
+    const set = (open) => {
+      if (open && !body.firstChild) add(body, [detail(row)]);
+      more.hidden = !open;
+      tr.classList.toggle('is-open', open);
+      toggle.setAttribute('aria-expanded', String(open));
+      if (open) st.open.add(key);
+      else st.open.delete(key);
+    };
+    tr.addEventListener('click', (e) => {
+      // a drag that selects text in the row is not a tap (a click from the keyboard has detail 0)
+      const sel = window.getSelection();
+      if (e.detail > 0 && sel && !sel.isCollapsed && tr.contains(sel.anchorNode)) return;
+      set(more.hidden);
+    });
+    if (st.open.has(key)) set(true);
+    return [tr, more];
   }
 
   const tools = search && el('div', { class: 'table-tools' },
@@ -1277,7 +1317,7 @@ function dataTable({ id, columns, rows, search, searchLabel = 'Search', emptyTex
   draw();
   return el('div', { class: 'table-block' },
     tools,
-    el('div', { class: cls('table-wrap', rows.length > 10 && 'is-long') },
+    el('div', { class: cls('table-wrap', rows.length > 10 && 'is-long', detail && 'has-detail') },
       el('table', { class: tableClass }, el('thead', {}, el('tr', {}, heads)), tbody)));
 }
 
@@ -2925,38 +2965,29 @@ function viewLogging(m) {
 
 // ── Testers ─────────────────────────────────────────────────────────────────
 
-function viewTesters(m) {
-  const rows = m.sheet.testers;
-  return [
-    intro(`The ${int(rows.length)} people active most recently, from the sheet. Last active counts logs and scans.${scopeNote(m)}`),
-    card(null, dataTable({
-      id: 'testers',
-      rows,
-      search: (r) => `${r.displayName} ${r.profileColours}`,
-      searchLabel: 'Search testers',
-      emptyText: 'No testers yet.',
-      columns: [
-        { key: 'displayName', label: 'Name', wrap: true },
-        { key: 'signedUp', label: 'Signed up', fmt: day },
-        { key: 'onboarded', label: 'Onboarded', fmt: (v) => (v ? 'Yes' : 'No'), value: (r) => (r.onboarded ? 1 : 0) },
-        { key: 'menuScans', label: 'Menu scans', num: true, fmt: int },
-        { key: 'bottleScans', label: 'Bottle scans', num: true, fmt: int },
-        { key: 'logs', label: 'Logs', num: true, fmt: int },
-        { key: 'wantToTry', label: 'Want to try', num: true, fmt: int },
-        { key: 'lastActive', label: 'Last active', fmt: day },
-        { key: 'daysSinceActive', label: 'Days since', num: true, fmt: int },
-        { key: 'profileColours', label: 'Colors picked', fmt: (v) => v || NA, cls: 'nowrap' },
-      ],
-    })),
-    card('What each person is on', peopleVersionsTable(m)),
-  ];
-}
-
-// metrics' peopleVersions (ADMIN_DASHBOARD.md 6.5): each person's platform, version, build
-// and channel from their newest app event, whatever the Builds choice, and the people with no
-// event too. The 1.0 builds send none, so their Last seen is last_active, their newest log or scan.
+// metrics' people (ADMIN_DASHBOARD.md 6.5, admin-dashboard v7): one row per person with a
+// profile, in the server's order (people seen in the app first, the most recent first). Each
+// carries the sheet's Testers columns, the platform, version, build and channel of their newest
+// app event whatever the Builds choice (the 1.0 builds send none), and their taste sentence with
+// its whole history (glug-app docs/architecture/TASTE_SENTENCE_HISTORY_PLAN.md). An answer
+// without people (a server before v7) gets the sheet's 50 testers instead.
 
 const NO_EVENTS_HINT = '1.0 or not opened since updating';
+
+/** A history row's source as the opened row labels it; a source not listed here is shown as it comes. */
+const SENTENCE_SOURCES = {
+  first: 'First sentence',
+  change: 'Changed · shared to Feed',
+  change_no_card: 'Changed',
+  baseline: 'Starting point',
+  reconstructed: 'Reconstructed',
+};
+
+const RECONSTRUCTED_NOTE = "Rebuilt from their past ratings with today's rules, not necessarily what they saw.";
+
+/** What Sentence changes counts: a live change, with a Feed card or without (not a first
+ *  sentence, the starting point, a reconstructed row or a source this page does not know). */
+const REAL_CHANGES = new Set(['change', 'change_no_card']);
 
 /** An instant's New York date, "2026-11-04". */
 function nyDate(t) {
@@ -2978,52 +3009,118 @@ function dayWord(v) {
 /** "1.0.1 (34)": the version and the build number, or null when the event carried neither. */
 function versionText(p) {
   const build = buildText(p.build);
-  return [buildText(p.app_version), build && `(${build})`].filter(Boolean).join(' ') || null;
+  return [buildText(p.appVersion), build && `(${build})`].filter(Boolean).join(' ') || null;
 }
 
-function peopleVersionsTable(m) {
-  const list = m.peopleVersions;
-  if (!Array.isArray(list)) return empty('The server does not send this list yet.');
+const textOf = (v) => (typeof v === 'string' && v.trim() ? v : null);
+const nameOf = (r) => textOf(r.displayName);
+const historyOf = (p) => (Array.isArray(p.sentenceHistory) ? p.sentenceHistory.filter((s) => s !== null && typeof s === 'object') : []);
+
+function viewTesters(m) {
+  if (!Array.isArray(m.people)) {
+    const rows = m.sheet.testers;
+    return [
+      intro(`The ${int(rows.length)} people active most recently, from the sheet. Last active counts logs and scans.${scopeNote(m)}`),
+      card(null, testersTable(rows, false), note('This answer has no app versions or taste sentences.')),
+    ];
+  }
   // the server leaves the test accounts out unless they are counted; this keeps to the answer's own scope
-  const rows = list.filter((p) => p !== null && typeof p === 'object' && (m.admin.scope.includeTest === true || p.is_test !== true));
-  const ran = (p) => typeof p.last_seen === 'string'; // last_seen is null only for a person with no events
-  const seenAt = (p) => (ran(p) ? p.last_seen : p.last_active);
+  const rows = m.people.filter((p) => p !== null && typeof p === 'object' && (m.admin.scope.includeTest === true || p.isTest !== true));
   return [
-    dataTable({
-      id: 'people-versions',
-      rows,
-      search: (p) => personName(p),
-      searchLabel: 'Search people',
-      emptyText: 'No people yet.',
-      columns: [
-        {
-          key: 'person', label: 'Person',
-          value: (p) => (typeof p.display_name === 'string' && p.display_name.trim() ? p.display_name : null),
-          cell: (p) => el('td', { class: 'wrap' }, personName(p), p.is_test === true && [' ', el('span', { class: 'chip' }, 'test')]),
+    intro(`Everyone with a profile, ${plural(rows.length, 'person', 'people')}, the most recently seen first. Last active counts logs and scans. Tap a row for the history of that person's taste sentence.${scopeNote(m)}`),
+    card(null, testersTable(rows, true),
+      note("Platform, Version and Last seen in app come from each person's newest app event, whatever the Builds choice. Sentence changes counts the changes made since recording began, with a Feed card or without, and leaves out the starting point and the reconstructed sentences.")),
+  ];
+}
+
+/** The Testers table: the sheet's columns, and with `full` (rows from people) the version and
+ *  sentence columns, each row opening to the sentence history. */
+function testersTable(rows, full) {
+  const ran = (p) => typeof p.lastSeen === 'string' && p.lastSeen !== ''; // lastSeen is null only for a person with no events
+  const columns = [
+    {
+      key: 'displayName', label: 'Name', value: nameOf,
+      cell: (r) => el('td', { class: 'wrap' }, nameOf(r) ?? 'No name', r.isTest === true && [' ', el('span', { class: 'chip' }, 'test')]),
+    },
+    { key: 'signedUp', label: 'Signed up', fmt: day },
+    { key: 'onboarded', label: 'Onboarded', fmt: (v) => (v ? 'Yes' : 'No'), value: (r) => (r.onboarded ? 1 : 0) },
+    { key: 'menuScans', label: 'Menu scans', num: true, fmt: int },
+    { key: 'bottleScans', label: 'Bottle scans', num: true, fmt: int },
+    { key: 'logs', label: 'Logs', num: true, fmt: int },
+    { key: 'wantToTry', label: 'Want to try', num: true, fmt: int },
+    { key: 'lastActive', label: 'Last active', fmt: day },
+    { key: 'daysSinceActive', label: 'Days since', num: true, fmt: int },
+    { key: 'profileColours', label: 'Colors picked', fmt: (v) => v || NA, cls: 'nowrap' },
+  ];
+  if (full) {
+    columns.push(
+      {
+        key: 'platform', label: 'Platform',
+        value: (p) => (Object.hasOwn(PLATFORMS, p.platform) ? PLATFORMS[p.platform] : buildText(p.platform) || null),
+      },
+      {
+        key: 'version', label: 'Version',
+        value: (p) => (ran(p) ? versionText(p) : null),
+        cell: (p) => (ran(p)
+          ? el('td', { class: 'nowrap' }, versionText(p) ?? NA, p.channel === 'dev' && [' ', el('span', { class: 'chip' }, 'dev')])
+          : el('td', { class: 'nowrap' }, 'No events', el('span', { class: 'cell-sub' }, NO_EVENTS_HINT))), // two lines, not more: the table scrolls sideways anyway
+      },
+      {
+        key: 'lastSeen', label: 'Last seen in app', cls: 'nowrap',
+        value: (p) => {
+          const t = eventMs(p.lastSeen);
+          return Number.isFinite(t) ? t : null;
         },
-        {
-          key: 'platform', label: 'Platform',
-          value: (p) => (Object.hasOwn(PLATFORMS, p.platform) ? PLATFORMS[p.platform] : buildText(p.platform) || null),
+        fmt: (v, p) => (v === null ? NA : dayWord(p.lastSeen)),
+      },
+      {
+        key: 'sentenceChanges', label: 'Sentence changes', num: true, fmt: int,
+        value: (p) => historyOf(p).filter((s) => REAL_CHANGES.has(s.source)).length,
+      },
+      {
+        key: 'tasteSentence', label: 'Current sentence', value: (p) => textOf(p.tasteSentence),
+        cell: (p) => {
+          const s = textOf(p.tasteSentence);
+          return el('td', { class: 'sentence-cell' }, s ? el('span', { class: 'sentence-line', title: s }, s) : NA);
         },
-        {
-          key: 'version', label: 'Version',
-          value: (p) => (ran(p) ? versionText(p) : null),
-          cell: (p) => (ran(p)
-            ? el('td', { class: 'nowrap' }, versionText(p) ?? NA)
-            : el('td', { class: 'wrap' }, 'No events', el('span', { class: 'cell-sub' }, NO_EVENTS_HINT))),
-        },
-        { key: 'channel', label: 'Channel', value: (p) => buildText(p.channel) || null },
-        {
-          key: 'lastSeen', label: 'Last seen', cls: 'nowrap',
-          value: (p) => {
-            const t = eventMs(seenAt(p));
-            return Number.isFinite(t) ? t : null;
-          },
-          fmt: (v, p) => (seenAt(p) === null || seenAt(p) === undefined ? 'Never' : dayWord(seenAt(p))),
-        },
-      ],
-    }),
-    note("From each person's newest app event, whatever the Builds choice. For people with no events, Last seen is when they last logged or scanned."),
+      },
+    );
+  }
+  return dataTable({
+    id: 'testers',
+    rows,
+    search: (r) => `${nameOf(r) ?? 'No name'} ${r.profileColours ?? ''}`, // the name as shown, so "no name" finds the unnamed
+    searchLabel: 'Search testers',
+    emptyText: 'No testers yet.',
+    columns,
+    detail: full && sentenceHistory,
+    rowKey: full && ((p) => p.userId),
+  });
+}
+
+/** The opened row: every sentence the person has held, newest first (the server sends them
+ *  oldest first), each with its date and where it came from. */
+function sentenceHistory(p) {
+  const steps = historyOf(p).reverse();
+  if (steps.length === 0) return el('p', { class: 'history-empty' }, 'No taste sentence yet.');
+  let noted = false;
+  return [
+    el('p', { class: 'history-head' }, 'Taste sentence, newest first'),
+    el('ol', { class: 'history' }, steps.map((s) => {
+      const t = eventMs(s.changedAt);
+      const source = textOf(s.source);
+      const label = source !== null && Object.hasOwn(SENTENCE_SOURCES, source) ? SENTENCE_SOURCES[source] : source ?? NA;
+      const explain = source === 'reconstructed' && !noted; // the note goes with the first reconstructed row only
+      if (explain) noted = true;
+      return el('li', { class: 'history-step' },
+        Number.isFinite(t)
+          ? el('time', { class: 'history-date', datetime: new Date(t).toISOString(), title: eventInstant(t) }, seenDay(s.changedAt))
+          : el('span', { class: 'history-date' }, NA),
+        el('div', { class: 'history-body' },
+          el('p', { class: 'history-sentence' }, textOf(s.sentence) ?? NA),
+          el('p', { class: 'history-source' }, label),
+          explain && el('p', { class: 'history-note' }, RECONSTRUCTED_NOTE)));
+    })),
   ];
 }
 
