@@ -48,6 +48,14 @@
         { "key": "Referrer-Policy", "value": "no-referrer" },
         { "key": "Content-Security-Policy", "value": "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' https://txjfbiriyceabushptlp.supabase.co; connect-src https://txjfbiriyceabushptlp.supabase.co; base-uri 'none'; form-action 'none'; frame-ancestors 'none'" }
       ]
+    },
+    {
+      "source": "/auth/reset",
+      "headers": [
+        { "key": "X-Robots-Tag", "value": "noindex, nofollow" },
+        { "key": "Referrer-Policy", "value": "no-referrer" },
+        { "key": "Content-Security-Policy", "value": "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self'; connect-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'" }
+      ]
     }
   ]
 }

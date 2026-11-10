@@ -6,7 +6,8 @@
         "components": [
           { "/": "/u/*", "comment": "A profile. Everything not listed stays in the browser." },
           { "/": "/l/*", "comment": "A log." },
-          { "/": "/s/*", "comment": "A menu scan's shared top picks." }
+          { "/": "/s/*", "comment": "A menu scan's shared top picks." },
+          { "/": "/auth/reset", "comment": "A password reset link. The session in its # is for the app." }
         ]
       }
     ]

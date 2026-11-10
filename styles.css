@@ -440,6 +440,16 @@ img { display: block; }
   color: var(--sage);
 }
 
+/* The same two badges on the olive hero (/auth/reset): the caption turns
+   light, and .hero-inner's gap does the row's spacing. */
+.hero .store-badges { margin: 0; }
+
+.hero .store-badge-caption {
+  margin: 0;
+  font-size: 0.8125rem;
+  color: var(--dust);
+}
+
 /* ── Home (/) ────────────────────────────────────────────────────── */
 
 .home {

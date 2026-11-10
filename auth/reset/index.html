@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <!-- The same policy vercel.json sends as a header for /auth/reset, minus
+       frame-ancestors, which a meta policy cannot carry. connect-src 'none':
+       nothing on this page sends a request of its own. -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self'; connect-src 'none'; base-uri 'none'; form-action 'none'">
+  <meta name="referrer" content="no-referrer">
+  <!-- First: takes the reset link's session out of the address bar without
+       reading it. The page's only script; no analytics here, ever. -->
+  <script src="/auth/reset.js"></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>glug</title>
+  <meta name="robots" content="noindex">
+  <meta name="theme-color" content="#464B36">
+  <link rel="icon" href="/assets/favicon-32.png" type="image/png">
+  <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+  <link rel="preload" href="/assets/fonts/ysabeau-office-latin-600-normal.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="/assets/fonts/ysabeau-office-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <!-- A password reset link lands here when it does not open the app (the
+       Universal Link is /auth/reset in .well-known/apple-app-site-association). -->
+  <main class="hero profile-link">
+    <div class="hero-inner">
+      <img class="logo" src="/assets/glug-logo-white.png" alt="glug" width="956" height="711">
+      <h1 class="tagline">Open this link on your phone with Glug installed to choose a new password.</h1>
+      <!--
+        The two badges as on /waitlist/thanks. Google waits for Play
+        production: TO GO LIVE, follow the steps in the comment on
+        waitlist/thanks/index.html here too.
+      -->
+      <div class="store-badges">
+        <div class="store-badge store-badge-apple">
+          <a class="apple-badge" href="https://apps.apple.com/app/id6791446035"><img src="/assets/badges/app-store-badge-black.svg" alt="Download on the App Store" width="120" height="40"></a>
+        </div>
+        <div class="store-badge store-badge-google" role="img" aria-label="Get it on Google Play, coming soon">
+          <img src="/assets/badges/google-play-badge.png" alt="" width="646" height="250">
+          <p class="store-badge-caption">Coming soon</p>
+        </div>
+      </div>
+    </div>
+  </main>
+</body>
+</html>
