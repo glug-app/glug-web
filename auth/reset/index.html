@@ -7,7 +7,8 @@
        nothing on this page sends a request of its own. -->
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self'; connect-src 'none'; base-uri 'none'; form-action 'none'">
   <meta name="referrer" content="no-referrer">
-  <!-- First: takes the reset link's session out of the address bar without
+  <!-- First: takes the reset link's query (a one-time token_hash that only the
+       app verifies; this page never uses it) out of the address bar without
        reading it. The page's only script; no analytics here, ever. -->
   <script src="/auth/reset.js"></script>
   <meta name="viewport" content="width=device-width, initial-scale=1">

@@ -7,7 +7,7 @@
           { "/": "/u/*", "comment": "A profile. Everything not listed stays in the browser." },
           { "/": "/l/*", "comment": "A log." },
           { "/": "/s/*", "comment": "A menu scan's shared top picks." },
-          { "/": "/auth/reset", "comment": "A password reset link. The session in its # is for the app." }
+          { "/": "/auth/reset", "comment": "A password reset link. It carries a one-time token_hash in its query that only the app verifies; the web page never uses it." }
         ]
       }
     ]
