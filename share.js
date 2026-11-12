@@ -254,6 +254,24 @@
     return { label: label, iso: then.toISOString() };
   }
 
+  /* The same short date for a calendar day: logs.drank_on, 'YYYY-MM-DD' with
+     no time and no zone. It is built from its three parts and checked as a
+     real day, never read with new Date('YYYY-MM-DD'), which means UTC midnight
+     and shows the day before to a visitor west of Greenwich. The iso is the
+     day itself, which is what a <time> element takes for a date. Null for a
+     value that is not a real day. */
+  function dayLabel(value) {
+    if (typeof value !== 'string') return null;
+    var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+    if (!m) return null;
+    var y = Number(m[1]), mo = Number(m[2]), d = Number(m[3]);
+    var then = new Date(y, mo - 1, d);
+    if (then.getFullYear() !== y || then.getMonth() !== mo - 1 || then.getDate() !== d) return null;
+    var label = MONTHS[mo - 1] + ' ' + d;
+    if (y !== new Date().getFullYear()) label += ', ' + y;
+    return { label: label, iso: value };
+  }
+
   /* ── The log card ───────────────────────────────────────────────── */
 
   function placePill(name, neighborhood) {
@@ -295,7 +313,9 @@
       kind.appendChild(text(word));
       meta.appendChild(kind);
     }
-    var date = dateLabel(log.logged_at);
+    // The day it was drunk; an answer with none (null, or one from before
+    // drank_on existed) falls back to the moment it was logged.
+    var date = dayLabel(log.drank_on) || dateLabel(log.logged_at);
     if (word && date) {
       var sep = el('span', null, MIDDLE_DOT);
       sep.setAttribute('aria-hidden', 'true');
@@ -377,7 +397,7 @@
     row.appendChild(column);
     if (typeof pick.match === 'number' && isFinite(pick.match)) {
       var match = Math.round(pick.match);
-      var pill = el('span', 'share-match', match + '%');
+      var pill = el('span', 'share-match', match + '% match');
       pill.setAttribute('role', 'img');
       pill.setAttribute('aria-label', match + COPY.percentMatch);
       row.appendChild(pill);
