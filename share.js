@@ -38,12 +38,9 @@
   var MAP_PIN_D =
     'M128,66a38,38,0,1,0,38,38A38,38,0,0,0,128,66Zm0,64a26,26,0,1,1,26-26A26,26,0,0,1,128,130Zm0-112a86.1,86.1,0,0,0-86,86c0,30.91,14.34,63.74,41.47,94.94a252.32,252.32,0,0,0,41.09,38,6,6,0,0,0,6.88,0,252.32,252.32,0,0,0,41.09-38c27.13-31.2,41.47-64,41.47-94.94A86.1,86.1,0,0,0,128,18Zm0,206.51C113,212.93,54,163.62,54,104a74,74,0,0,1,148,0C202,163.62,143,212.93,128,224.51Z';
 
-  /* The rating words (the app's wineRatingLabel) and the colour dots
-     (WineColorDot). Looked up with hasOwn, never a bare index. */
+  /* The rating words (the app's wineRatingLabel), read out as the glasses'
+     label. Looked up with hasOwn, never a bare index. */
   var RATINGS = { poor: 'Poor', fair: 'Fair', good: 'Good', great: 'Great', superb: 'Superb' };
-  var COLORS = { Red: 'red', White: 'white', Orange: 'orange' };
-  COLORS['Ros' + String.fromCharCode(233)] = 'rose';
-  var MIDDLE_DOT = ' ' + String.fromCharCode(183) + ' ';
 
   /* The page's words, in one place for Sadhana's pass. The Rare word is the
      app's RARE_COPY.badge. */
@@ -231,6 +228,30 @@
     return badge;
   }
 
+  var RATING_ORDER = ['poor', 'fair', 'good', 'great', 'superb'];
+  var WINE_FILL = 'M205.33,103.67,183.56,29.74A8,8,0,0,0,175.89,24H80.11a8,8,0,0,0-7.67,5.74L50.67,103.67a63.46,63.46,0,0,0,17.42,64.67A87.41,87.41,0,0,0,120,191.63V232H88a8,8,0,1,0,0,16h80a8,8,0,1,0,0-16H136V191.63a87.39,87.39,0,0,0,51.91-23.29A63.48,63.48,0,0,0,205.33,103.67ZM86.09,40h83.82L190,108.19c.09.3.17.6.25.9-21.42,7.68-45.54-1.6-58.63-8.23C106.43,88.11,86.43,86.49,71.68,88.93Z';
+  var WINE_LIGHT = 'M203.41,104.23,181.64,30.3a6,6,0,0,0-5.75-4.3H80.11a6,6,0,0,0-5.75,4.3L52.59,104.23a61.48,61.48,0,0,0,16.87,62.65A85.35,85.35,0,0,0,122,189.77V234H88a6,6,0,1,0,0,12h80a6,6,0,1,0,0-12H134V189.77a85.38,85.38,0,0,0,52.54-22.89A61.48,61.48,0,0,0,203.41,104.23ZM84.6,38h86.8l20.51,69.63c.26.9.5,1.8.71,2.7-22.54,9.07-48.17-.73-61.91-7.68C104.1,89.17,83.48,88.34,68.83,91.52Zm93.75,120.11a73.67,73.67,0,0,1-100.7,0,49.53,49.53,0,0,1-13.56-50.48l.74-2.51c12.34-4.46,32.26-6.05,60.46,8.23,11,5.55,28.65,12.64,47.52,12.64A65.56,65.56,0,0,0,194,122.62,49.22,49.22,0,0,1,178.35,158.11Z';
+  /* A saved rating as the app's rows draw it (RatingGlasses, 18 px): five glasses, filled up to the rating. */
+  function ratingGlasses(rating) {
+    var wrap = el('span', 'share-rating');
+    wrap.setAttribute('role', 'img');
+    wrap.setAttribute('aria-label', COPY.rated + RATINGS[rating].toLowerCase());
+    var filled = RATING_ORDER.indexOf(rating);
+    for (var i = 0; i < RATING_ORDER.length; i++) {
+      var icon = svg('svg');
+      icon.setAttribute('viewBox', '0 0 256 256');
+      icon.setAttribute('width', '18');
+      icon.setAttribute('height', '18');
+      icon.setAttribute('aria-hidden', 'true');
+      var path = svg('path');
+      path.setAttribute('d', i <= filled ? WINE_FILL : WINE_LIGHT);
+      path.setAttribute('fill', 'currentColor');
+      icon.appendChild(path);
+      wrap.appendChild(icon);
+    }
+    return wrap;
+  }
+
   /* The wine's name with its vintage after it, regular and muted. */
   function wineLine(className, name, vintage) {
     var line = el('span', className, name);
@@ -294,33 +315,13 @@
     return pill;
   }
 
-  /* The colour dot and word, " · " and the date; a missing value goes with
-     its separator. Null when there is nothing to print. */
+  /* The date alone (the app's row dropped the colour dot and word). Null when
+     there is nothing to print. */
   function metaLine(log) {
     var meta = el('p', 'share-meta');
-    var colorKey = hasOwn(COLORS, log.color) ? COLORS[log.color] : null;
-    // The word is color_word (Sparkling or Fortified when that is the type,
-    // else the colour); without one, the colour itself only when it is one
-    // of the four the dot knows.
-    var word = str(log.color_word) || (colorKey ? log.color : null);
-    if (word) {
-      var kind = el('span', 'share-kind');
-      if (colorKey) {
-        var dot = el('span', 'share-dot share-dot-' + colorKey);
-        dot.setAttribute('aria-hidden', 'true');
-        kind.appendChild(dot);
-      }
-      kind.appendChild(text(word));
-      meta.appendChild(kind);
-    }
     // The day it was drunk; an answer with none (null, or one from before
     // drank_on existed) falls back to the moment it was logged.
     var date = dayLabel(log.drank_on) || dateLabel(log.logged_at);
-    if (word && date) {
-      var sep = el('span', null, MIDDLE_DOT);
-      sep.setAttribute('aria-hidden', 'true');
-      meta.appendChild(sep);
-    }
     if (date) {
       var time = el('time', null, date.label);
       time.dateTime = date.iso;
@@ -338,16 +339,10 @@
     main.appendChild(el('p', 'share-lead', COPY.tried));
     var body = el('div', 'share-body');
     var wine = el('p', 'share-wine');
-    wine.appendChild(wineLine('share-wine-name', str(log.title) || COPY.unknownWine, vintageOf(log.vintage)));
+    wine.appendChild(wineLine('share-wine-name', str(log.title) || COPY.unknownWine));
     body.appendChild(wine);
     var badges = el('div', 'share-badges');
-    if (hasOwn(RATINGS, log.rating)) {
-      var word = RATINGS[log.rating];
-      var chip = el('span', 'share-verdict share-verdict-' + log.rating, word);
-      chip.setAttribute('role', 'img');
-      chip.setAttribute('aria-label', COPY.rated + word);
-      badges.appendChild(chip);
-    }
+    if (hasOwn(RATINGS, log.rating)) badges.appendChild(ratingGlasses(log.rating));
     if (log.is_rare === true) badges.appendChild(rareBadge());
     if (badges.firstChild) body.appendChild(badges);
     main.appendChild(body);

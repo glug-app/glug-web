@@ -954,26 +954,10 @@ img { display: block; }
   padding-top: 1px;
 }
 
-/* The rating word in a pill: the app's VerdictChip ladder, lightest to
-   darkest. The outline is the pill's own 1 px border, transparent on the
-   four filled ratings, so every pill is the same size. */
-.share-verdict {
-  display: inline-flex;
-  align-items: center;
-  padding: 2px 10px;
-  border: 1px solid transparent;
-  border-radius: 9999px;
-  font-size: 12px;
-  line-height: 16px;
-  font-weight: 600;
-  white-space: nowrap;
-}
-
-.share-verdict-poor   { background: var(--bone); border-color: var(--dust); color: var(--ink); }
-.share-verdict-fair   { background: var(--sand); color: var(--ink); }
-.share-verdict-good   { background: var(--dust); color: var(--ink); }
-.share-verdict-great  { background: var(--sage); color: var(--bone); }
-.share-verdict-superb { background: var(--vine-olive); color: var(--bone); }
+/* The rating as five wine glasses, filled up to the rating (the app's
+   RatingGlasses). */
+.share-rating { display: inline-flex; align-items: center; gap: 2px; color: var(--vine-olive); }
+.share-rating svg { flex-shrink: 0; }
 
 /* The Rare badge: a 9 px filled diamond and the word in capitals, antique
    gold, letter-spaced. */
@@ -1051,7 +1035,7 @@ img { display: block; }
   white-space: nowrap;
 }
 
-/* The colour and the date, at the right of the card's last line. */
+/* The date, at the right of the card's last line. */
 .share-meta {
   margin-left: auto;
   flex-shrink: 0;
@@ -1060,22 +1044,6 @@ img { display: block; }
   line-height: 16px;
   color: var(--sage);
 }
-
-/* The 7 px colour dot before the colour word, its centre half a capital
-   above the baseline (the app's WineColorDot on the cap line). */
-.share-dot {
-  display: inline-block;
-  width: 7px;
-  height: 7px;
-  margin-right: 6px;
-  border-radius: 9999px;
-  transform: translateY(calc(3.5px - 0.329em));
-}
-
-.share-dot-red    { background: var(--wine-red); }
-.share-dot-white  { background: var(--wine-white); }
-.share-dot-rose   { background: var(--wine-rose); }
-.share-dot-orange { background: var(--wine-orange); }
 
 /* The scan card: the venue under "My top picks at", then up to three rows. */
 .share-venue {
