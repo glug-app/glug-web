@@ -956,7 +956,7 @@ img { display: block; }
 
 /* The rating as five wine glasses, filled up to the rating (the app's
    RatingGlasses). */
-.share-rating { display: inline-flex; align-items: center; gap: 2px; color: var(--vine-olive); }
+.share-rating { display: inline-flex; align-items: center; gap: 3px; color: var(--vine-olive); }
 .share-rating svg { flex-shrink: 0; }
 
 /* The Rare badge: a 9 px filled diamond and the word in capitals, antique

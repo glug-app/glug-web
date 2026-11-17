@@ -244,7 +244,6 @@
     var wrap = el('span', 'share-rating');
     wrap.setAttribute('role', 'img');
     wrap.setAttribute('aria-label', COPY.rated + RATINGS[rating].toLowerCase());
-    wrap.style.gap = '3px'; /* styles.css says 2px; set here so the brief's 3px holds with that file untouched */
     var filled = RATING_ORDER.indexOf(rating);
     for (var i = 0; i < RATING_ORDER.length; i++) {
       var on = i <= filled;
