@@ -229,24 +229,61 @@
   }
 
   var RATING_ORDER = ['poor', 'fair', 'good', 'great', 'superb'];
-  var WINE_FILL = 'M205.33,103.67,183.56,29.74A8,8,0,0,0,175.89,24H80.11a8,8,0,0,0-7.67,5.74L50.67,103.67a63.46,63.46,0,0,0,17.42,64.67A87.41,87.41,0,0,0,120,191.63V232H88a8,8,0,1,0,0,16h80a8,8,0,1,0,0-16H136V191.63a87.39,87.39,0,0,0,51.91-23.29A63.48,63.48,0,0,0,205.33,103.67ZM86.09,40h83.82L190,108.19c.09.3.17.6.25.9-21.42,7.68-45.54-1.6-58.63-8.23C106.43,88.11,86.43,86.49,71.68,88.93Z';
-  var WINE_LIGHT = 'M203.41,104.23,181.64,30.3a6,6,0,0,0-5.75-4.3H80.11a6,6,0,0,0-5.75,4.3L52.59,104.23a61.48,61.48,0,0,0,16.87,62.65A85.35,85.35,0,0,0,122,189.77V234H88a6,6,0,1,0,0,12h80a6,6,0,1,0,0-12H134V189.77a85.38,85.38,0,0,0,52.54-22.89A61.48,61.48,0,0,0,203.41,104.23ZM84.6,38h86.8l20.51,69.63c.26.9.5,1.8.71,2.7-22.54,9.07-48.17-.73-61.91-7.68C104.1,89.17,83.48,88.34,68.83,91.52Zm93.75,120.11a73.67,73.67,0,0,1-100.7,0,49.53,49.53,0,0,1-13.56-50.48l.74-2.51c12.34-4.46,32.26-6.05,60.46,8.23,11,5.55,28.65,12.64,47.52,12.64A65.56,65.56,0,0,0,194,122.62,49.22,49.22,0,0,1,178.35,158.11Z';
-  /* A saved rating as the app's rows draw it (RatingGlasses, 18 px): five glasses, filled up to the rating. */
+  /* Gul's glass, the one the app draws (glug-app RatingGlasses): the bowl and
+   * the stem in a 24 x 35 box cropped from her 44 px glass, with a fill that
+   * rises from the bowl's foot (y 28) up its 22 units, clipped to the bowl. */
+  var GLASS_BOWL = 'M12 6H32C33 19 28 28 22 28C16 28 11 19 12 6Z';
+  var GLASS_STEM = 'M22 28V38M22 38H15M22 38H29';
+  var GLASS_FILL = [0.16, 0.36, 0.60, 0.82, 1];
+  var GLASS_ON = '#464B36';  /* vine-olive */
+  var GLASS_OFF = '#C4C3B0'; /* dust */
+  var glassCount = 0;
+  /* A saved rating as the app's rows draw it (RatingGlasses, 18 px tall):
+   * five glasses, glass i filled to GLASS_FILL[i] when i is at or below the rating. */
   function ratingGlasses(rating) {
     var wrap = el('span', 'share-rating');
     wrap.setAttribute('role', 'img');
     wrap.setAttribute('aria-label', COPY.rated + RATINGS[rating].toLowerCase());
+    wrap.style.gap = '3px'; /* styles.css says 2px; set here so the brief's 3px holds with that file untouched */
     var filled = RATING_ORDER.indexOf(rating);
     for (var i = 0; i < RATING_ORDER.length; i++) {
+      var on = i <= filled;
+      var colour = on ? GLASS_ON : GLASS_OFF;
       var icon = svg('svg');
-      icon.setAttribute('viewBox', '0 0 256 256');
-      icon.setAttribute('width', '18');
+      icon.setAttribute('viewBox', '10 4.5 24 35');
+      icon.setAttribute('width', '12.34');
       icon.setAttribute('height', '18');
       icon.setAttribute('aria-hidden', 'true');
-      var path = svg('path');
-      path.setAttribute('d', i <= filled ? WINE_FILL : WINE_LIGHT);
-      path.setAttribute('fill', 'currentColor');
-      icon.appendChild(path);
+      if (on) {
+        var clipId = 'share-glass-' + (glassCount++);
+        var clip = svg('clipPath');
+        clip.setAttribute('id', clipId);
+        var clipBowl = svg('path');
+        clipBowl.setAttribute('d', GLASS_BOWL);
+        clip.appendChild(clipBowl);
+        icon.appendChild(clip);
+        var rise = 22 * GLASS_FILL[i];
+        var fill = svg('rect');
+        fill.setAttribute('x', '10');
+        fill.setAttribute('y', String(28 - rise));
+        fill.setAttribute('width', '24');
+        fill.setAttribute('height', String(rise));
+        fill.setAttribute('fill', colour);
+        fill.setAttribute('clip-path', 'url(#' + clipId + ')');
+        icon.appendChild(fill);
+      }
+      var parts = [GLASS_BOWL, GLASS_STEM];
+      for (var j = 0; j < parts.length; j++) {
+        var line = svg('path');
+        line.setAttribute('d', parts[j]);
+        line.setAttribute('fill', 'none');
+        line.setAttribute('stroke', colour);
+        line.setAttribute('stroke-width', '1.25');
+        line.setAttribute('stroke-linecap', 'round');
+        line.setAttribute('stroke-linejoin', 'round');
+        line.setAttribute('vector-effect', 'non-scaling-stroke');
+        icon.appendChild(line);
+      }
       wrap.appendChild(icon);
     }
     return wrap;
